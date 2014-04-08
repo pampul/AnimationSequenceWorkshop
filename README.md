@@ -69,6 +69,6 @@ The `data-timer` will let the hotspot waiting in the middle of his animation dur
 The `data-effect` attribute will make the effect wanted to show the hotspot.
 
 
-/!\
-This is just a workshop, then you must understand that the class isn't well documented.
-/!\
+**/!\**
+**This is just a workshop, then you must understand that the project is not well documented.**
+**/!\**
