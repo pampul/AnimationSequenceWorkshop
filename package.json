@@ -1,7 +1,12 @@
 {
-  "name": "JsAppBoilerplate",
+  "name": "AnimationSequenceWorkshop",
   "version": "0.1.0",
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/Argetloum/AnimationSequenceWorkshop.git"
+  },
   "devDependencies": {
+    "bower": "~1.3.0",
     "grunt": "latest",
     "grunt-contrib-cssmin": "latest",
     "grunt-contrib-concat": "latest",
