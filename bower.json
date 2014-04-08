@@ -1,0 +1,27 @@
+{
+  "name": "AnimationSequence",
+  "version": "0.1.0",
+  "authors": [
+    "Argetloum <florian.mithieux@gmail.com>"
+  ],
+  "description": "Angular JS test App",
+  "main": "app/app.js",
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "jquery": "~2.1.0",
+    "jquery-migrate": "~1.2.1",
+    "jquery-ui": "~1.10.4",
+    "bootstrap": "~3.1.1",
+    "modernizr": "~2.7.2",
+    "jquery-mousewheel": "Argetloum/jquery-mousewheel#3.1.6",
+    "jquery-ui-touch-punch": "furf/jquery-ui-touch-punch",
+    "Font-Awesome": "FortAwesome/Font-Awesome#~4.0.3"
+  }
+}

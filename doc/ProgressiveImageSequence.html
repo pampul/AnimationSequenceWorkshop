@@ -1,0 +1,208 @@
+<!DOCTYPE html><html lang="en"><head><title>ProgressiveImageSequence</title></head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0"><meta name="groc-relative-root" content=""><meta name="groc-document-path" content="ProgressiveImageSequence"><meta name="groc-project-path" content="app/ProgressiveImageSequence.js"><link rel="stylesheet" type="text/css" media="all" href="assets/style.css"><script type="text/javascript" src="assets/behavior.js"></script><body><div id="meta"><div class="file-path">app/ProgressiveImageSequence.js</div></div><div id="document"><div class="segment"><div class="comments "><div class="wrapper"><p>Created by Hinderling Volkart AG.
+User: sev
+Date: 23.06.11
+Time: 17:02
+Copyright 2011, Hinderling Volkart AG. All rights reserved.</p></div></div><div class="code"><div class="wrapper"><span class="kd">function</span> <span class="nx">ProgressiveImageSequence</span><span class="p">(</span><span class="nx">imgpath</span><span class="p">,</span> <span class="nx">count</span><span class="p">,</span> <span class="nx">options</span><span class="p">)</span> <span class="p">{</span>
+  <span class="kd">var</span> <span class="nx">myself</span> <span class="o">=</span> <span class="k">this</span><span class="p">;</span>
+
+  <span class="kd">var</span> <span class="nx">images</span> <span class="o">=</span> <span class="p">[];</span>
+  <span class="kd">var</span> <span class="nx">numLoaded</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+  <span class="kd">var</span> <span class="nx">isComplete</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
+  <span class="k">this</span><span class="p">.</span><span class="nx">length</span> <span class="o">=</span> <span class="nx">count</span><span class="p">;</span>
+
+  <span class="kd">var</span> <span class="nx">defaultOptions</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="nx">indexSize</span><span class="o">:</span> <span class="mi">4</span><span class="p">,</span>
+    <span class="nx">initialStep</span><span class="o">:</span> <span class="mi">64</span><span class="p">,</span>
+    <span class="nx">onComplete</span><span class="o">:</span> <span class="kc">null</span><span class="p">,</span>
+    <span class="nx">onProgress</span><span class="o">:</span> <span class="kc">null</span><span class="p">,</span>
+    <span class="nx">stopAt</span><span class="o">:</span> <span class="mi">1</span>
+  <span class="p">};</span>
+  <span class="kd">var</span> <span class="nx">pref</span> <span class="o">=</span> <span class="p">{};</span>
+  <span class="nx">$</span><span class="p">.</span><span class="nx">extend</span><span class="p">(</span><span class="nx">pref</span><span class="p">,</span> <span class="nx">defaultOptions</span><span class="p">,</span> <span class="nx">options</span><span class="p">);</span>
+
+  <span class="kd">var</span> <span class="nx">step</span> <span class="o">=</span> <span class="nx">pref</span><span class="p">.</span><span class="nx">initialStep</span><span class="p">;</span>
+  <span class="kd">var</span> <span class="nx">current</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+  <span class="kd">var</span> <span class="nx">hasRestepped</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
+
+  <span class="kd">function</span> <span class="nx">callback</span><span class="p">(</span><span class="nx">f</span><span class="p">,</span> <span class="nx">o</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!!</span><span class="nx">f</span><span class="p">)</span> <span class="nx">f</span><span class="p">.</span><span class="nx">apply</span><span class="p">(</span><span class="nx">o</span><span class="p">);</span>
+  <span class="p">}</span>
+
+  <span class="k">this</span><span class="p">.</span><span class="nx">stop</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+    <span class="nx">step</span> <span class="o">=</span> <span class="nx">pref</span><span class="p">.</span><span class="nx">stopAt</span> <span class="o">/</span> <span class="mi">2</span><span class="p">;</span>
+  <span class="p">};</span>
+
+  <span class="k">this</span><span class="p">.</span><span class="nx">reset</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+    <span class="nx">isComplete</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
+    <span class="nx">numLoaded</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+    <span class="nx">step</span> <span class="o">=</span> <span class="nx">pref</span><span class="p">.</span><span class="nx">initialStep</span><span class="p">;</span>
+    <span class="nx">current</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+    <span class="nx">hasRestepped</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">nearestIndex</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+    <span class="nx">$</span><span class="p">.</span><span class="nx">each</span><span class="p">(</span><span class="nx">images</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">k</span><span class="p">,</span> <span class="nx">v</span><span class="p">)</span> <span class="p">{</span>
+      <span class="o">!!</span><span class="nx">v</span> <span class="o">&amp;&amp;</span> <span class="nx">v</span><span class="p">.</span><span class="nx">unload</span><span class="p">();</span>
+    <span class="p">});</span>
+  <span class="p">};</span>
+
+  <span class="k">this</span><span class="p">.</span><span class="nx">getAt</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">index</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="nx">images</span><span class="p">[</span><span class="nx">index</span><span class="p">].</span><span class="nx">image</span><span class="p">;</span>
+  <span class="p">};</span>
+
+  <span class="k">this</span><span class="p">.</span><span class="nx">nearestIndex</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+
+  <span class="k">this</span><span class="p">.</span><span class="nx">getNearest</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">index</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nx">index</span> <span class="o">=</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">floor</span><span class="p">(</span><span class="nx">index</span><span class="p">);</span>
+    <span class="kd">var</span> <span class="nx">diff</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">i</span><span class="p">,</span> <span class="nx">img</span><span class="p">;</span>
+    <span class="k">for</span> <span class="p">(</span><span class="nx">diff</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">diff</span> <span class="o">&lt;</span> <span class="nx">images</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span> <span class="nx">diff</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+      <span class="nx">i</span> <span class="o">=</span> <span class="nx">index</span> <span class="o">+</span> <span class="nx">diff</span><span class="p">;</span>
+      <span class="k">if</span> <span class="p">(</span><span class="nx">i</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">images</span><span class="p">.</span><span class="nx">length</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">img</span> <span class="o">=</span> <span class="nx">images</span><span class="p">[</span><span class="nx">i</span><span class="p">];</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">img</span> <span class="o">&amp;&amp;</span> <span class="nx">img</span><span class="p">.</span><span class="nx">isLoaded</span><span class="p">())</span> <span class="p">{</span>
+          <span class="k">this</span><span class="p">.</span><span class="nx">nearestIndex</span> <span class="o">=</span> <span class="nx">i</span><span class="p">;</span>
+          <span class="k">return</span> <span class="nx">img</span><span class="p">.</span><span class="nx">image</span><span class="p">;</span>
+        <span class="p">}</span>
+      <span class="p">}</span>
+      <span class="nx">i</span> <span class="o">=</span> <span class="nx">index</span> <span class="o">-</span> <span class="nx">diff</span><span class="p">;</span>
+      <span class="k">if</span> <span class="p">(</span><span class="nx">i</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">images</span><span class="p">.</span><span class="nx">length</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">img</span> <span class="o">=</span> <span class="nx">images</span><span class="p">[</span><span class="nx">i</span><span class="p">];</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">img</span> <span class="o">&amp;&amp;</span> <span class="nx">img</span><span class="p">.</span><span class="nx">isLoaded</span><span class="p">())</span> <span class="p">{</span>
+          <span class="k">this</span><span class="p">.</span><span class="nx">nearestIndex</span> <span class="o">=</span> <span class="nx">i</span><span class="p">;</span>
+          <span class="k">return</span> <span class="nx">img</span><span class="p">.</span><span class="nx">image</span><span class="p">;</span>
+        <span class="p">}</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="kc">null</span><span class="p">;</span>
+  <span class="p">};</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Loading</p></div></div><div class="code"><div class="wrapper">  <span class="k">this</span><span class="p">.</span><span class="nx">getNumLoaded</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="nx">numLoaded</span><span class="p">;</span>
+  <span class="p">};</span>
+
+  <span class="k">this</span><span class="p">.</span><span class="nx">getLoadProgress</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="nx">numLoaded</span> <span class="o">*</span> <span class="nx">pref</span><span class="p">.</span><span class="nx">stopAt</span> <span class="o">/</span> <span class="nx">myself</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span>
+  <span class="p">};</span>
+
+  <span class="k">this</span><span class="p">.</span><span class="nx">isLoaded</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">index</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">index</span> <span class="o">===</span> <span class="kc">undefined</span><span class="p">)</span> <span class="p">{</span>
+      <span class="k">return</span> <span class="nx">numLoaded</span> <span class="o">==</span> <span class="nx">myself</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span>
+    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+      <span class="k">return</span> <span class="nx">images</span><span class="p">[</span><span class="nx">index</span><span class="p">].</span><span class="nx">isLoaded</span><span class="p">();</span>
+    <span class="p">}</span>
+  <span class="p">};</span>
+
+  <span class="k">this</span><span class="p">.</span><span class="nx">loadPosition</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">position</span><span class="p">,</span> <span class="nx">complete</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nx">position</span> <span class="o">=</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">min</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nx">position</span><span class="p">));</span>
+    <span class="kd">var</span> <span class="nx">index</span> <span class="o">=</span> <span class="nx">position</span> <span class="o">*</span> <span class="p">(</span><span class="nx">myself</span><span class="p">.</span><span class="nx">length</span> <span class="o">-</span> <span class="mi">1</span><span class="p">);</span>
+    <span class="nx">index</span> <span class="o">=</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">round</span><span class="p">(</span><span class="nx">index</span><span class="p">);</span>
+    <span class="nx">myself</span><span class="p">.</span><span class="nx">loadIndex</span><span class="p">(</span><span class="nx">index</span><span class="p">,</span> <span class="nx">complete</span><span class="p">);</span>
+  <span class="p">};</span>
+
+  <span class="k">this</span><span class="p">.</span><span class="nx">loadIndex</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">index</span><span class="p">,</span> <span class="nx">complete</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">index</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="o">||</span> <span class="nx">index</span> <span class="o">&gt;=</span> <span class="nx">myself</span><span class="p">.</span><span class="nx">length</span><span class="p">)</span> <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="nx">index</span> <span class="o">!=</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">floor</span><span class="p">(</span><span class="nx">index</span><span class="p">))</span> <span class="p">{</span>
+      <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="c1">//console.log( &quot;Loading &quot; + index + &quot; (&quot;+[current,step]+&quot;)&quot; );</span>
+
+    <span class="kd">var</span> <span class="nx">img</span> <span class="o">=</span> <span class="nx">images</span><span class="p">[</span><span class="nx">index</span><span class="p">];</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">img</span> <span class="o">==</span> <span class="kc">null</span><span class="p">)</span> <span class="p">{</span>
+      <span class="kd">var</span> <span class="nx">src</span> <span class="o">=</span> <span class="nx">getSrcAt</span><span class="p">(</span><span class="nx">index</span><span class="p">);</span>
+      <span class="nx">img</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">ImageLoader</span><span class="p">(</span><span class="nx">src</span><span class="p">);</span>
+      <span class="nx">images</span><span class="p">[</span><span class="nx">index</span><span class="p">]</span> <span class="o">=</span> <span class="nx">img</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="nx">img</span><span class="p">.</span><span class="nx">load</span><span class="p">(</span><span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+      <span class="nx">numLoaded</span><span class="o">++</span><span class="p">;</span>
+      <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">isComplete</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">callback</span><span class="p">(</span><span class="nx">pref</span><span class="p">.</span><span class="nx">onProgress</span><span class="p">,</span> <span class="k">this</span><span class="p">);</span>
+      <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+        <span class="c1">//console &amp;&amp; console.log(&quot;On progress?&quot;);</span>
+      <span class="p">}</span>
+      <span class="nx">callback</span><span class="p">(</span><span class="nx">complete</span><span class="p">,</span> <span class="k">this</span><span class="p">);</span>
+    <span class="p">});</span>
+  <span class="p">};</span>
+
+  <span class="k">this</span><span class="p">.</span><span class="nx">loadNext</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">complete</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">step</span> <span class="o">&lt;</span> <span class="nx">pref</span><span class="p">.</span><span class="nx">stopAt</span><span class="p">)</span> <span class="k">return</span><span class="p">;</span> <span class="c1">// in this case we&#39;ve already loaded all images - other threads just don&#39;t know yet</span>
+
+    <span class="kd">function</span> <span class="nx">next</span><span class="p">()</span> <span class="p">{</span>
+      <span class="nx">loadNextImage</span><span class="p">();</span>
+      <span class="nx">callback</span><span class="p">(</span><span class="nx">complete</span><span class="p">,</span> <span class="k">this</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="kd">function</span> <span class="nx">end</span><span class="p">()</span> <span class="p">{</span>
+      <span class="nx">finished</span><span class="p">();</span>
+      <span class="nx">callback</span><span class="p">(</span><span class="nx">complete</span><span class="p">,</span> <span class="k">this</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="nx">current</span> <span class="o">+=</span> <span class="nx">step</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">current</span> <span class="o">&gt;=</span> <span class="nx">myself</span><span class="p">.</span><span class="nx">length</span><span class="p">)</span> <span class="p">{</span>
+      <span class="k">if</span> <span class="p">(</span><span class="nx">hasRestepped</span><span class="p">)</span> <span class="nx">step</span> <span class="o">/=</span> <span class="mi">2</span><span class="p">;</span>
+      <span class="nx">hasRestepped</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+      <span class="nx">current</span> <span class="o">=</span> <span class="nx">step</span> <span class="o">/</span> <span class="mi">2</span><span class="p">;</span>
+      <span class="k">if</span> <span class="p">(</span><span class="nx">current</span> <span class="o">&gt;=</span> <span class="nx">pref</span><span class="p">.</span><span class="nx">stopAt</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">myself</span><span class="p">.</span><span class="nx">loadIndex</span><span class="p">(</span><span class="nx">current</span><span class="p">,</span> <span class="nx">next</span><span class="p">);</span>
+      <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+        <span class="nx">finished</span><span class="p">();</span>
+      <span class="p">}</span>
+    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+      <span class="nx">myself</span><span class="p">.</span><span class="nx">loadIndex</span><span class="p">(</span><span class="nx">current</span><span class="p">,</span> <span class="nx">next</span><span class="p">);</span>
+    <span class="p">}</span>
+  <span class="p">};</span>
+
+  <span class="k">this</span><span class="p">.</span><span class="nx">getImageLoader</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">index</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="nx">images</span><span class="p">[</span><span class="nx">index</span><span class="p">];</span>
+  <span class="p">};</span>
+
+  <span class="kd">function</span> <span class="nx">loadNextImage</span><span class="p">()</span> <span class="p">{</span>
+    <span class="nx">setTimeout</span><span class="p">(</span><span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+      <span class="nx">myself</span><span class="p">.</span><span class="nx">loadNext</span><span class="p">();</span>
+    <span class="p">},</span> <span class="nx">$</span><span class="p">.</span><span class="nx">browser</span><span class="p">.</span><span class="nx">mozilla</span> <span class="o">||</span> <span class="nx">$</span><span class="p">.</span><span class="nx">browser</span><span class="p">.</span><span class="nx">msie</span> <span class="o">?</span> <span class="mi">50</span> <span class="o">:</span> <span class="mi">5</span><span class="p">);</span>
+  <span class="p">}</span>
+
+  <span class="kd">function</span> <span class="nx">finished</span><span class="p">()</span> <span class="p">{</span>
+    <span class="nx">isComplete</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+    <span class="nx">callback</span><span class="p">(</span><span class="nx">pref</span><span class="p">.</span><span class="nx">onComplete</span><span class="p">,</span> <span class="k">this</span><span class="p">);</span>
+    <span class="c1">//console.log( &quot;All images loaded&quot; , numLoaded, &#39;of&#39;, myself.length );</span>
+  <span class="p">}</span>
+
+  <span class="kd">function</span> <span class="nx">getSrcAt</span><span class="p">(</span><span class="nx">index</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">str</span> <span class="o">=</span> <span class="p">(</span><span class="nx">index</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">+</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">pow</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="nx">pref</span><span class="p">.</span><span class="nx">indexSize</span><span class="p">)).</span><span class="nx">toString</span><span class="p">(</span><span class="mi">10</span><span class="p">).</span><span class="nx">substr</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+    <span class="k">return</span> <span class="nx">imgpath</span><span class="p">.</span><span class="nx">replace</span><span class="p">(</span><span class="s1">&#39;{index}&#39;</span><span class="p">,</span> <span class="nx">str</span><span class="p">);</span>
+  <span class="p">}</span>
+
+  <span class="k">this</span><span class="p">.</span><span class="nx">load</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+    <span class="nx">myself</span><span class="p">.</span><span class="nx">loadIndex</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nx">loadNextImage</span><span class="p">);</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kd">function</span> <span class="nx">ImageLoader</span><span class="p">(</span><span class="nx">src</span><span class="p">)</span> <span class="p">{</span>
+  <span class="c1">//var elem = $(&#39;&lt;img&gt;&#39;);</span>
+  <span class="k">this</span><span class="p">.</span><span class="nx">image</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Image</span><span class="p">();</span>
+  <span class="kd">var</span> <span class="nx">img</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">image</span><span class="p">;</span>
+  <span class="kd">var</span> <span class="nx">loadStarted</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
+
+  <span class="k">this</span><span class="p">.</span><span class="nx">getSrc</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="nx">src</span><span class="p">;</span>
+  <span class="p">};</span>
+
+  <span class="k">this</span><span class="p">.</span><span class="nx">load</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">complete</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nx">loadStarted</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+    <span class="nx">img</span><span class="p">.</span><span class="nx">src</span> <span class="o">=</span> <span class="nx">src</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">img</span><span class="p">.</span><span class="nx">complete</span><span class="p">)</span> <span class="p">{</span>
+      <span class="nx">complete</span><span class="p">.</span><span class="nx">apply</span><span class="p">(</span><span class="nx">img</span><span class="p">);</span>
+    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+      <span class="nx">$</span><span class="p">(</span><span class="nx">img</span><span class="p">).</span><span class="nx">load</span><span class="p">(</span><span class="nx">complete</span><span class="p">);</span>
+    <span class="p">}</span>
+  <span class="p">};</span>
+
+  <span class="k">this</span><span class="p">.</span><span class="nx">unload</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+    <span class="nx">loadStarted</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
+    <span class="c1">//img.src = &#39;&#39;;</span>
+    <span class="nx">img</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">image</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Image</span><span class="p">();</span>
+  <span class="p">};</span>
+
+  <span class="k">this</span><span class="p">.</span><span class="nx">isLoaded</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="nx">loadStarted</span> <span class="o">&amp;&amp;</span> <span class="nx">img</span><span class="p">.</span><span class="nx">complete</span><span class="p">;</span>
+  <span class="p">}</span>
+<span class="p">}</span></div></div></div></div></body></html>

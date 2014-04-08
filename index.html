@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=780,user-scalable=no"/>
+
+  <title>Animation Sequence</title>
+  <meta name="description" content="">
+
+  <meta property="og:title" content="Marcel Libon"/>
+  <meta property="og:type" content="tv_show"/>
+  <meta property="og:url" content="http://www.url.fr"/>
+  <meta property="og:image" content="http://www.url.fr"/>
+  <meta property="og:site_name" content="Marcel Libon"/>
+
+  <link rel="stylesheet" href="public/css/combine.min.css"/>
+  <!--[if lt IE 9]>
+  <script src="bower_components/bootstrap/assets/js/html5shiv.js"></script>
+  <script src="bower_components/bootstrap/assets/js/respond.min.js"></script>
+  <![endif]-->
+</head>
+<body>
+
+<div id="main" style="height: 6000px;">
+
+  <div class="street-view" id="street-view">
+    <img src="" alt=""/>
+  </div>
+
+  <div id="hotspots">
+
+    <div id="welcome-hotspot" class="hotspot hotspot-centered" data-position="0" data-speed="1" data-timer="0"
+         data-effect="slide-bottom">
+      <div class="welcome-wrapper">
+        <h1>Bienvenue</h1>
+
+        <p>
+          Merci de scroller pour
+          <br/>
+          voir la suite
+        </p>
+
+        <div class="arrow-wrapper">
+          <div class="fa fa-angle-double-down fa-lg shake-button event-click" data-scroll-to="0.2"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="hotspot" data-position="0.3" data-speed="2" data-timer="0.2" data-effect="slide-bottom" style="left: 15%;">
+      <div class="hotspot-wrapper blue">
+        30%
+      </div>
+    </div>
+
+    <div class="hotspot right" data-position="0.5" data-speed="2" data-timer="0" data-effect="slide-bottom" style="right: 20%;">
+      <div class="hotspot-wrapper">
+        50%
+      </div>
+    </div>
+
+    <div id="end-hotspot" class="hotspot" data-position="0.9" data-speed="3" data-timer="0.1" data-effect="slide-left"
+         data-top-position="10%">
+
+      <div class="end-wrapper">
+
+        <h2>Fin</h2>
+
+        <p>
+          Fin de la séquence ...
+          <br/><br/>
+        </p>
+      </div>
+
+    </div>
+
+  </div>
+
+
+</div>
+
+</div>
+
+<div id="loading-bar"></div>
+</div>
+
+<script src="public/js/combine.js"></script>
+
+</body>
+</html>

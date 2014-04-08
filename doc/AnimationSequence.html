@@ -1,0 +1,823 @@
+<!DOCTYPE html><html lang="en"><head><title>AnimationSequence</title></head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0"><meta name="groc-relative-root" content=""><meta name="groc-document-path" content="AnimationSequence"><meta name="groc-project-path" content="app/AnimationSequence.js"><link rel="stylesheet" type="text/css" media="all" href="assets/style.css"><script type="text/javascript" src="assets/behavior.js"></script><body><div id="meta"><div class="file-path">app/AnimationSequence.js</div></div><div id="document"><div class="segment"><div class="comments "><div class="wrapper"><p>Created by Florian on 08/11/2013.</p></div></div><div class="code"><div class="wrapper"><span class="s2">&quot;use strict&quot;</span><span class="p">;</span>
+
+<span class="kd">var</span> <span class="nx">AnimationSequence</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+
+  <span class="kd">var</span> <span class="nx">$win</span> <span class="o">=</span> <span class="nx">$</span><span class="p">(</span><span class="nb">window</span><span class="p">);</span>
+  <span class="kd">var</span> <span class="nx">$htmlBody</span> <span class="o">=</span> <span class="nx">$</span><span class="p">(</span><span class="s2">&quot;html, body&quot;</span><span class="p">);</span>
+  <span class="kd">var</span> <span class="nx">$imgContainer</span> <span class="o">=</span> <span class="nx">$</span><span class="p">(</span><span class="s1">&#39;.street-view&#39;</span><span class="p">);</span>
+  <span class="kd">var</span> <span class="nx">$imgElement</span> <span class="o">=</span> <span class="nx">$</span><span class="p">(</span><span class="s1">&#39;.street-view &gt; img&#39;</span><span class="p">);</span>
+  <span class="kd">var</span> <span class="nx">$hotspotElements</span> <span class="o">=</span> <span class="nx">$</span><span class="p">(</span><span class="s1">&#39;.hotspot&#39;</span><span class="p">);</span>
+  <span class="kd">var</span> <span class="nx">$hotspotsList</span> <span class="o">=</span> <span class="nx">$</span><span class="p">(</span><span class="s1">&#39;#hotspots&#39;</span><span class="p">);</span>
+  <span class="kd">var</span> <span class="nx">windowHeight</span><span class="p">,</span> <span class="nx">windowWidth</span><span class="p">;</span>
+  <span class="kd">var</span> <span class="nx">fullHeight</span><span class="p">,</span> <span class="nx">scrollHeight</span><span class="p">;</span>
+  <span class="kd">var</span> <span class="nx">streetImgWidth</span> <span class="o">=</span> <span class="mi">1024</span><span class="p">,</span>
+    <span class="nx">streetImgHeight</span> <span class="o">=</span> <span class="mi">640</span><span class="p">;</span>
+  <span class="kd">var</span> <span class="nx">currentPosition</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+  <span class="kd">var</span> <span class="nx">targetPosition</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+  <span class="kd">var</span> <span class="nx">isTouch</span> <span class="o">=</span> <span class="s1">&#39;ontouchstart&#39;</span> <span class="k">in</span> <span class="nb">window</span><span class="p">;</span>
+  <span class="kd">var</span> <span class="nx">currentSrc</span><span class="p">,</span> <span class="nx">highresTimeout</span><span class="p">;</span>
+  <span class="kd">var</span> <span class="nx">loadCounterForIE</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+  <span class="kd">var</span> <span class="nx">loadHighresCounter</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+  <span class="kd">var</span> <span class="nx">imageSeqLoader</span><span class="p">;</span>
+  <span class="kd">var</span> <span class="nx">sequencePos</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+  <span class="kd">var</span> <span class="nx">autoScrollLength</span> <span class="o">=</span> <span class="mi">10000</span><span class="p">;</span>
+  <span class="kd">var</span> <span class="nx">autoScrollWaitingTime</span> <span class="o">=</span> <span class="mi">5000</span><span class="p">;</span>
+  <span class="kd">var</span> <span class="nx">autoScrollEnabled</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+  <span class="kd">var</span> <span class="nx">autoScrollLaunched</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
+  <span class="kd">var</span> <span class="nx">userScrollEnabled</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+  <span class="kd">var</span> <span class="nx">wrapperHeight</span> <span class="o">=</span> <span class="mi">5000</span><span class="p">;</span>
+  <span class="kd">var</span> <span class="nx">$clickableEvents</span><span class="p">;</span>
+  <span class="kd">var</span> <span class="nx">scrollMin</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="nx">scrollMax</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="nx">dragScrollMin</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="nx">dragScrollMax</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="nx">dragScroll</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
+
+  <span class="k">this</span><span class="p">.</span><span class="nx">init</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">maxImgHeight</span><span class="p">,</span> <span class="nx">maxImgWidth</span><span class="p">)</span> <span class="p">{</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Initialize vars</p></div></div><div class="code"><div class="wrapper">    <span class="nx">$imgContainer</span> <span class="o">=</span> <span class="nx">$</span><span class="p">(</span><span class="s1">&#39;.street-view&#39;</span><span class="p">);</span>
+    <span class="nx">$hotspotElements</span> <span class="o">=</span> <span class="nx">$</span><span class="p">(</span><span class="s1">&#39;.hotspot&#39;</span><span class="p">);</span>
+    <span class="nx">$clickableEvents</span> <span class="o">=</span> <span class="nx">$</span><span class="p">(</span><span class="s1">&#39;.event-click&#39;</span><span class="p">);</span>
+    <span class="nx">$imgElement</span> <span class="o">=</span> <span class="nx">$</span><span class="p">(</span><span class="s1">&#39;.street-view &gt; img&#39;</span><span class="p">);</span>
+    <span class="nx">currentPosition</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+    <span class="nx">targetPosition</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+    <span class="nx">loadCounterForIE</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+    <span class="nx">loadHighresCounter</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Set background img width and height</p></div></div><div class="code"><div class="wrapper">    <span class="nx">streetImgWidth</span> <span class="o">=</span> <span class="nx">maxImgWidth</span><span class="p">;</span>
+    <span class="nx">streetImgHeight</span> <span class="o">=</span> <span class="nx">maxImgHeight</span><span class="p">;</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Clear the scrollTimer timeout</p></div></div><div class="code"><div class="wrapper">    <span class="nx">clearTimeout</span><span class="p">(</span><span class="nx">$</span><span class="p">.</span><span class="nx">data</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="s1">&#39;scrollTimer&#39;</span><span class="p">));</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Detect when user scroll only</p></div></div><div class="code"><div class="wrapper">    <span class="nx">$win</span><span class="p">.</span><span class="nx">mousewheel</span><span class="p">(</span><span class="kd">function</span> <span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
+      <span class="nx">mouseWheelMove</span><span class="p">(</span><span class="nx">e</span><span class="p">);</span>
+    <span class="p">});</span>
+
+    <span class="nx">handleFiredEvents</span><span class="p">();</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Get the dimensions</p></div></div><div class="code"><div class="wrapper">    <span class="nx">calculateDimensions</span><span class="p">();</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Launch anim loop</p></div></div><div class="code"><div class="wrapper">    <span class="nx">animloop</span><span class="p">();</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Handle events (window resize and user or jquery scroll)</p></div></div><div class="code"><div class="wrapper">    <span class="nx">$win</span><span class="p">.</span><span class="nx">resize</span><span class="p">(</span><span class="nx">handleResize</span><span class="p">);</span>
+    <span class="nx">$win</span><span class="p">.</span><span class="nx">scroll</span><span class="p">(</span><span class="nx">handleScroll</span><span class="p">);</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Resize the screen</p></div></div><div class="code"><div class="wrapper">    <span class="nx">handleResize</span><span class="p">();</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">userScrollEnabled</span><span class="p">)</span> <span class="p">{</span>
+      <span class="nx">userScrollEnabled</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
+    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+      <span class="k">if</span> <span class="p">(</span><span class="nx">isTouch</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">touchOverride</span><span class="p">();</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">};</span>
+
+  <span class="kd">function</span> <span class="nx">handleFiredEvents</span><span class="p">()</span> <span class="p">{</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Handle click events</p></div></div><div class="code"><div class="wrapper">    <span class="nx">$clickableEvents</span><span class="p">.</span><span class="nx">click</span><span class="p">(</span><span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+      <span class="nx">clickEvent</span><span class="p">(</span><span class="nx">$</span><span class="p">(</span><span class="k">this</span><span class="p">));</span>
+    <span class="p">});</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Manage draggable events</p></div></div><div class="code"><div class="wrapper">    <span class="nx">$</span><span class="p">(</span><span class="s2">&quot;.draggable&quot;</span><span class="p">).</span><span class="nx">draggable</span><span class="p">({</span>
+      <span class="nx">revert</span><span class="o">:</span> <span class="kc">true</span>
+    <span class="p">});</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Fired event when dropped</p></div></div><div class="code"><div class="wrapper">    <span class="nx">$</span><span class="p">(</span><span class="s2">&quot;.droppable&quot;</span><span class="p">).</span><span class="nx">droppable</span><span class="p">({</span>
+      <span class="nx">hoverClass</span><span class="o">:</span> <span class="s2">&quot;drop-hover&quot;</span><span class="p">,</span>
+      <span class="nx">drop</span><span class="o">:</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">event</span><span class="p">,</span> <span class="nx">ui</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">dropItemEvent</span><span class="p">(</span><span class="nx">event</span><span class="p">,</span> <span class="nx">$</span><span class="p">(</span><span class="k">this</span><span class="p">));</span>
+      <span class="p">}</span>
+    <span class="p">});</span>
+
+  <span class="p">}</span>
+
+  <span class="kd">function</span> <span class="nx">completeFiredEvent</span><span class="p">(</span><span class="nx">$elem</span><span class="p">)</span> <span class="p">{</span>
+
+    <span class="kd">var</span> <span class="nx">eventLaunch</span> <span class="o">=</span> <span class="s1">&#39;start&#39;</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">$elem</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;data-event-launch&#39;</span><span class="p">))</span> <span class="p">{</span>
+      <span class="nx">eventLaunch</span> <span class="o">=</span> <span class="nx">$elem</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;data-event-launch&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="nx">eventLaunch</span> <span class="o">===</span> <span class="s1">&#39;end&#39;</span><span class="p">)</span> <span class="p">{</span>
+      <span class="nx">handleDataAttributes</span><span class="p">(</span><span class="nx">$elem</span><span class="p">);</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+
+  <span class="kd">function</span> <span class="nx">dropItemEvent</span><span class="p">(</span><span class="nx">event</span><span class="p">,</span> <span class="nx">$elem</span><span class="p">)</span> <span class="p">{</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="nx">$elem</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;data-scroll-to&#39;</span><span class="p">))</span> <span class="p">{</span>
+      <span class="nx">setTimeout</span><span class="p">(</span><span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+        <span class="nx">scrollToPos</span><span class="p">(</span><span class="nx">$elem</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;data-scroll-to&#39;</span><span class="p">),</span> <span class="kc">false</span><span class="p">,</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+          <span class="nx">completeFiredEvent</span><span class="p">(</span><span class="nx">$elem</span><span class="p">);</span>
+        <span class="p">});</span>
+      <span class="p">},</span> <span class="mi">250</span><span class="p">);</span>
+    <span class="p">}</span>
+
+  <span class="p">}</span>
+
+  <span class="kd">function</span> <span class="nx">clickEvent</span><span class="p">(</span><span class="nx">$elem</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">scrollToY</span> <span class="o">=</span> <span class="nx">$elem</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;data-scroll-to&#39;</span><span class="p">);</span>
+
+    <span class="nx">scrollToPos</span><span class="p">(</span><span class="nx">scrollToY</span><span class="p">,</span> <span class="kc">false</span><span class="p">,</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+      <span class="nx">completeFiredEvent</span><span class="p">(</span><span class="nx">$elem</span><span class="p">);</span>
+    <span class="p">});</span>
+  <span class="p">}</span>
+
+  <span class="kd">function</span> <span class="nx">mouseWheelMove</span><span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Check if the user can scroll</p></div></div><div class="code"><div class="wrapper">    <span class="k">if</span> <span class="p">(</span><span class="nx">userScrollEnabled</span><span class="p">)</span> <span class="p">{</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Stop animations</p></div></div><div class="code"><div class="wrapper">      <span class="nx">$</span><span class="p">(</span><span class="s2">&quot;html, body&quot;</span><span class="p">).</span><span class="nx">stop</span><span class="p">();</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Clear the scrollTimer timeout</p></div></div><div class="code"><div class="wrapper">      <span class="nx">clearTimeout</span><span class="p">(</span><span class="nx">$</span><span class="p">.</span><span class="nx">data</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="s1">&#39;scrollTimer&#39;</span><span class="p">));</span>
+
+      <span class="nx">handleScrollControl</span><span class="p">();</span>
+
+    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+      <span class="nx">e</span><span class="p">.</span><span class="nx">preventDefault</span><span class="p">();</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+
+  <span class="kd">function</span> <span class="nx">userScrollMinMaxHandler</span><span class="p">(</span><span class="nx">oldTargetPosition</span><span class="p">,</span> <span class="nx">targetPosition</span><span class="p">)</span> <span class="p">{</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="nx">userScrollEnabled</span><span class="p">)</span> <span class="p">{</span>
+      <span class="k">if</span> <span class="p">(</span><span class="nx">targetPosition</span> <span class="o">&gt;</span> <span class="nx">oldTargetPosition</span><span class="p">)</span> <span class="p">{</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>downscroll code</p></div></div><div class="code"><div class="wrapper">        <span class="k">if</span> <span class="p">(</span><span class="nx">scrollMax</span> <span class="o">&lt;</span> <span class="nx">targetPosition</span><span class="p">)</span> <span class="p">{</span>
+          <span class="nx">scrollToPos</span><span class="p">(</span><span class="nx">scrollMax</span> <span class="o">-</span> <span class="mf">0.01</span><span class="p">,</span> <span class="kc">true</span><span class="p">,</span> <span class="kc">false</span><span class="p">);</span>
+        <span class="p">}</span>
+      <span class="p">}</span> <span class="k">else</span> <span class="p">{</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>upscroll code</p></div></div><div class="code"><div class="wrapper">        <span class="k">if</span> <span class="p">(</span><span class="nx">scrollMin</span> <span class="o">&gt;</span> <span class="nx">targetPosition</span><span class="p">)</span> <span class="p">{</span>
+          <span class="nx">scrollToPos</span><span class="p">(</span><span class="nx">scrollMin</span> <span class="o">+</span> <span class="mf">0.01</span><span class="p">,</span> <span class="kc">true</span><span class="p">,</span> <span class="kc">false</span><span class="p">);</span>
+        <span class="p">}</span>
+      <span class="p">}</span>
+    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+      <span class="k">if</span> <span class="p">(</span><span class="nx">dragScrollMax</span> <span class="o">&lt;</span> <span class="nx">targetPosition</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">scrollToPos</span><span class="p">(</span><span class="nx">dragScrollMax</span><span class="p">,</span> <span class="kc">true</span><span class="p">,</span> <span class="kc">false</span><span class="p">);</span>
+      <span class="p">}</span>
+      <span class="k">if</span> <span class="p">(</span><span class="nx">dragScrollMin</span> <span class="o">&gt;</span> <span class="nx">targetPosition</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">scrollToPos</span><span class="p">(</span><span class="nx">dragScrollMin</span><span class="p">,</span> <span class="kc">true</span><span class="p">,</span> <span class="kc">false</span><span class="p">);</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+
+  <span class="p">}</span>
+
+  <span class="kd">function</span> <span class="nx">handleScrollControl</span><span class="p">()</span> <span class="p">{</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="nx">autoScrollEnabled</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="nx">autoScrollLaunched</span><span class="p">)</span> <span class="p">{</span>
+      <span class="nx">$</span><span class="p">.</span><span class="nx">data</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="s1">&#39;scrollTimer&#39;</span><span class="p">,</span> <span class="nx">setTimeout</span><span class="p">(</span><span class="kd">function</span> <span class="p">()</span> <span class="p">{</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>fix bug if timeout still running after the seq change</p></div></div><div class="code"><div class="wrapper">        <span class="nx">autoScrollLaunched</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+        <span class="nx">scrollToPos</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="kc">false</span><span class="p">,</span> <span class="kc">false</span><span class="p">);</span>
+
+      <span class="p">},</span> <span class="nx">autoScrollWaitingTime</span><span class="p">));</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+
+  <span class="kd">function</span> <span class="nx">launchAutoScroll</span><span class="p">(</span><span class="nx">timer</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">autoScrollEnabled</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="nx">autoScrollLaunched</span><span class="p">)</span> <span class="p">{</span>
+      <span class="nx">$</span><span class="p">.</span><span class="nx">data</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="s1">&#39;scrollTimer&#39;</span><span class="p">,</span> <span class="nx">setTimeout</span><span class="p">(</span><span class="kd">function</span> <span class="p">()</span> <span class="p">{</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>fix bug if timeout still running after the seq change</p></div></div><div class="code"><div class="wrapper">        <span class="nx">autoScrollLaunched</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+        <span class="nx">scrollToPos</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="kc">false</span><span class="p">,</span> <span class="kc">false</span><span class="p">);</span>
+
+      <span class="p">},</span> <span class="nx">timer</span><span class="p">));</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+
+  <span class="kd">function</span> <span class="nx">scrollToPos</span><span class="p">(</span><span class="nx">posY</span><span class="p">,</span> <span class="nx">scrollQuick</span><span class="p">,</span> <span class="nx">callback</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">heightRequired</span> <span class="o">=</span> <span class="nx">posY</span> <span class="o">*</span> <span class="nx">scrollHeight</span><span class="p">;</span>
+
+    <span class="kd">var</span> <span class="nx">scrollTime</span> <span class="o">=</span> <span class="nx">getScrollTimeLeft</span><span class="p">(</span><span class="nx">posY</span><span class="p">);</span>
+
+    <span class="nx">$</span><span class="p">(</span><span class="s2">&quot;html, body&quot;</span><span class="p">).</span><span class="nx">animate</span><span class="p">({</span>
+      <span class="nx">scrollTop</span><span class="o">:</span> <span class="nx">heightRequired</span>
+    <span class="p">},</span> <span class="p">(</span><span class="nx">scrollQuick</span> <span class="o">?</span> <span class="mi">0</span> <span class="o">:</span> <span class="nx">scrollTime</span><span class="p">),</span> <span class="s1">&#39;swing&#39;</span><span class="p">,</span> <span class="p">(</span><span class="o">!</span><span class="nx">callback</span> <span class="o">?</span> <span class="nx">bottomCompleteHandler</span> <span class="o">:</span> <span class="nx">callback</span><span class="p">));</span>
+
+  <span class="p">}</span>
+
+  <span class="kd">function</span> <span class="nx">bottomCompleteHandler</span><span class="p">()</span> <span class="p">{</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Clear the scrollTimer timeout</p></div></div><div class="code"><div class="wrapper">    <span class="nx">clearTimeout</span><span class="p">(</span><span class="nx">$</span><span class="p">.</span><span class="nx">data</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="s1">&#39;scrollTimer&#39;</span><span class="p">));</span>
+    <span class="nx">autoScrollLaunched</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
+
+  <span class="p">}</span>
+
+  <span class="kd">function</span> <span class="nx">getScrollTimeLeft</span><span class="p">(</span><span class="nx">posY</span><span class="p">)</span> <span class="p">{</span>
+
+    <span class="kd">var</span> <span class="nx">scrollTime</span> <span class="o">=</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">abs</span><span class="p">(</span><span class="nx">posY</span> <span class="o">-</span> <span class="nx">targetPosition</span><span class="p">)</span> <span class="o">*</span> <span class="nx">autoScrollLength</span><span class="p">;</span>
+
+    <span class="k">return</span> <span class="nx">scrollTime</span><span class="p">;</span>
+  <span class="p">}</span>
+
+  <span class="kd">function</span> <span class="nx">calculateDimensions</span><span class="p">()</span> <span class="p">{</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Get the browser height</p></div></div><div class="code"><div class="wrapper">    <span class="nx">windowWidth</span> <span class="o">=</span> <span class="nx">$win</span><span class="p">.</span><span class="nx">width</span><span class="p">();</span>
+    <span class="nx">windowHeight</span> <span class="o">=</span> <span class="nx">$win</span><span class="p">.</span><span class="nx">height</span><span class="p">();</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Get the page height</p></div></div><div class="code"><div class="wrapper">    <span class="nx">fullHeight</span> <span class="o">=</span> <span class="nx">$</span><span class="p">(</span><span class="s1">&#39;#main&#39;</span><span class="p">).</span><span class="nx">height</span><span class="p">();</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Get the total value to scroll</p></div></div><div class="code"><div class="wrapper">    <span class="nx">scrollHeight</span> <span class="o">=</span> <span class="nx">fullHeight</span> <span class="o">-</span> <span class="nx">windowHeight</span><span class="p">;</span>
+  <span class="p">}</span>
+
+  <span class="kd">function</span> <span class="nx">handleResize</span><span class="p">()</span> <span class="p">{</span>
+    <span class="nx">calculateDimensions</span><span class="p">();</span>
+    <span class="nx">resizeBackgroundImage</span><span class="p">();</span>
+    <span class="nx">centerItems</span><span class="p">();</span>
+    <span class="nx">handleScroll</span><span class="p">();</span>
+  <span class="p">}</span>
+
+  <span class="kd">function</span> <span class="nx">centerItems</span><span class="p">()</span> <span class="p">{</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Get the centered hotspot width and center it</p></div></div><div class="code"><div class="wrapper">    <span class="nx">$</span><span class="p">(</span><span class="s1">&#39;.hotspot-centered&#39;</span><span class="p">).</span><span class="nx">each</span><span class="p">(</span><span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+      <span class="kd">var</span> <span class="nx">centeredHotspotWidth</span> <span class="o">=</span> <span class="nx">$</span><span class="p">(</span><span class="k">this</span><span class="p">).</span><span class="nx">width</span><span class="p">();</span>
+      <span class="kd">var</span> <span class="nx">pushLeft</span> <span class="o">=</span> <span class="p">(</span><span class="nx">windowWidth</span> <span class="o">-</span> <span class="nx">centeredHotspotWidth</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">;</span>
+      <span class="nx">$</span><span class="p">(</span><span class="k">this</span><span class="p">).</span><span class="nx">css</span><span class="p">({</span>
+        <span class="nx">left</span><span class="o">:</span> <span class="nx">pushLeft</span> <span class="o">+</span> <span class="s1">&#39;px&#39;</span>
+      <span class="p">});</span>
+    <span class="p">});</span>
+  <span class="p">}</span>
+
+  <span class="kd">function</span> <span class="nx">resizeBackgroundImage</span><span class="p">()</span> <span class="p">{</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>get image container size</p></div></div><div class="code"><div class="wrapper">    <span class="kd">var</span> <span class="nx">scale</span> <span class="o">=</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">max</span><span class="p">(</span><span class="nx">windowHeight</span> <span class="o">/</span> <span class="nx">streetImgHeight</span><span class="p">,</span> <span class="nx">windowWidth</span> <span class="o">/</span> <span class="nx">streetImgWidth</span><span class="p">);</span>
+    <span class="kd">var</span> <span class="nx">width</span> <span class="o">=</span> <span class="nx">scale</span> <span class="o">*</span> <span class="nx">streetImgWidth</span><span class="p">,</span>
+      <span class="nx">height</span> <span class="o">=</span> <span class="nx">scale</span> <span class="o">*</span> <span class="nx">streetImgHeight</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">left</span> <span class="o">=</span> <span class="p">(</span><span class="nx">windowWidth</span> <span class="o">-</span> <span class="nx">width</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span>
+      <span class="nx">top</span> <span class="o">=</span> <span class="p">(</span><span class="nx">windowHeight</span> <span class="o">-</span> <span class="nx">height</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">isChrome</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">$</span><span class="p">.</span><span class="nx">browser</span><span class="p">.</span><span class="nx">chrome</span><span class="p">)</span> <span class="p">{</span>
+      <span class="nx">isChrome</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="kd">var</span> <span class="nx">transform</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">;</span>
+
+    <span class="k">if</span> <span class="p">((</span><span class="nx">$</span><span class="p">.</span><span class="nx">browser</span><span class="p">.</span><span class="nx">safari</span> <span class="o">||</span> <span class="nx">isTouch</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="nx">isChrome</span><span class="p">)</span> <span class="p">{</span>
+      <span class="nx">transform</span> <span class="o">=</span> <span class="s1">&#39;translate3d(&#39;</span> <span class="o">+</span> <span class="p">[</span><span class="o">-</span><span class="nx">streetImgWidth</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="nx">streetImgHeight</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">].</span><span class="nx">join</span><span class="p">(</span><span class="s1">&#39;px,&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;px) scale3d(&#39;</span> <span class="o">+</span> <span class="nx">scale</span> <span class="o">+</span> <span class="s1">&#39;,&#39;</span> <span class="o">+</span> <span class="nx">scale</span> <span class="o">+</span> <span class="s1">&#39;,1) translate3d(&#39;</span> <span class="o">+</span> <span class="p">[</span><span class="nx">windowWidth</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">/</span> <span class="nx">scale</span><span class="p">,</span> <span class="nx">windowHeight</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">/</span> <span class="nx">scale</span><span class="p">,</span> <span class="mi">0</span><span class="p">].</span><span class="nx">join</span><span class="p">(</span><span class="s1">&#39;px,&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;)&#39;</span><span class="p">;</span>
+      <span class="nx">$imgElement</span>
+        <span class="p">.</span><span class="nx">width</span><span class="p">(</span><span class="nx">streetImgWidth</span><span class="p">).</span><span class="nx">height</span><span class="p">(</span><span class="nx">streetImgHeight</span><span class="p">)</span>
+        <span class="p">.</span><span class="nx">css</span><span class="p">(</span><span class="s1">&#39;-webkit-transform&#39;</span><span class="p">,</span> <span class="nx">transform</span><span class="p">)</span>
+        <span class="p">.</span><span class="nx">css</span><span class="p">({</span>
+          <span class="s1">&#39;position&#39;</span><span class="o">:</span> <span class="s1">&#39;fixed&#39;</span><span class="p">,</span>
+          <span class="nx">top</span><span class="o">:</span> <span class="mi">0</span><span class="p">,</span>
+          <span class="nx">left</span><span class="o">:</span> <span class="mi">0</span>
+        <span class="p">});</span>
+    <span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nx">Modernizr</span><span class="p">.</span><span class="nx">csstransforms</span><span class="p">)</span> <span class="p">{</span>
+      <span class="nx">transform</span> <span class="o">=</span> <span class="s1">&#39;translate(&#39;</span> <span class="o">+</span> <span class="p">[</span><span class="o">-</span><span class="nx">streetImgWidth</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="nx">streetImgHeight</span> <span class="o">/</span> <span class="mi">2</span><span class="p">].</span><span class="nx">join</span><span class="p">(</span><span class="s1">&#39;px,&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;px) scale(&#39;</span> <span class="o">+</span> <span class="nx">scale</span> <span class="o">+</span> <span class="s1">&#39;) translate(&#39;</span> <span class="o">+</span> <span class="p">[</span><span class="nx">windowWidth</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">/</span> <span class="nx">scale</span><span class="p">,</span> <span class="nx">windowHeight</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">/</span> <span class="nx">scale</span><span class="p">].</span><span class="nx">join</span><span class="p">(</span><span class="s1">&#39;px,&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;px)&#39;</span><span class="p">;</span>
+      <span class="nx">$imgElement</span>
+        <span class="p">.</span><span class="nx">width</span><span class="p">(</span><span class="nx">streetImgWidth</span><span class="p">).</span><span class="nx">height</span><span class="p">(</span><span class="nx">streetImgHeight</span><span class="p">)</span>
+        <span class="p">.</span><span class="nx">css</span><span class="p">({</span>
+          <span class="s1">&#39;-webkit-transform&#39;</span><span class="o">:</span> <span class="nx">transform</span><span class="p">,</span>
+          <span class="s1">&#39;-moz-transform&#39;</span><span class="o">:</span> <span class="nx">transform</span><span class="p">,</span>
+          <span class="s1">&#39;-o-transform&#39;</span><span class="o">:</span> <span class="nx">transform</span><span class="p">,</span>
+          <span class="s1">&#39;-ms-transform&#39;</span><span class="o">:</span> <span class="nx">transform</span>
+        <span class="p">})</span>
+        <span class="p">.</span><span class="nx">css</span><span class="p">({</span>
+          <span class="s1">&#39;position&#39;</span><span class="o">:</span> <span class="s1">&#39;fixed&#39;</span><span class="p">,</span>
+          <span class="nx">top</span><span class="o">:</span> <span class="mi">0</span><span class="p">,</span>
+          <span class="nx">left</span><span class="o">:</span> <span class="mi">0</span>
+        <span class="p">});</span>
+    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+      <span class="nx">$imgElement</span>
+        <span class="p">.</span><span class="nx">width</span><span class="p">(</span><span class="nx">width</span><span class="p">).</span><span class="nx">height</span><span class="p">(</span><span class="nx">height</span><span class="p">)</span>
+        <span class="p">.</span><span class="nx">css</span><span class="p">(</span><span class="s1">&#39;position&#39;</span><span class="p">,</span> <span class="s1">&#39;fixed&#39;</span><span class="p">)</span>
+        <span class="p">.</span><span class="nx">css</span><span class="p">(</span><span class="s1">&#39;left&#39;</span><span class="p">,</span> <span class="nx">left</span> <span class="o">+</span> <span class="s1">&#39;px&#39;</span><span class="p">)</span>
+        <span class="p">.</span><span class="nx">css</span><span class="p">(</span><span class="s1">&#39;top&#39;</span><span class="p">,</span> <span class="nx">top</span> <span class="o">+</span> <span class="s1">&#39;px&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+
+  <span class="p">}</span>
+
+  <span class="kd">function</span> <span class="nx">handleScroll</span><span class="p">()</span> <span class="p">{</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Clear the scrollTimer timeout</p></div></div><div class="code"><div class="wrapper">    <span class="nx">clearTimeout</span><span class="p">(</span><span class="nx">$</span><span class="p">.</span><span class="nx">data</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="s1">&#39;scrollTimer&#39;</span><span class="p">));</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Keep the oldTargetPosition</p></div></div><div class="code"><div class="wrapper">    <span class="kd">var</span> <span class="nx">oldTargetPosition</span> <span class="o">=</span> <span class="nx">currentPosition</span><span class="p">;</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Get the number of px scrolled by the total height (the percentage in fact)</p></div></div><div class="code"><div class="wrapper">    <span class="nx">targetPosition</span> <span class="o">=</span> <span class="nx">getScrollTop</span><span class="p">()</span> <span class="o">/</span> <span class="nx">scrollHeight</span><span class="p">;</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Re-launch scroll timer</p></div></div><div class="code"><div class="wrapper">    <span class="nx">handleScrollControl</span><span class="p">();</span>
+  <span class="p">}</span>
+
+  <span class="kd">function</span> <span class="nx">setScrollTop</span><span class="p">(</span><span class="nx">value</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nx">$win</span><span class="p">.</span><span class="nx">scrollTop</span><span class="p">(</span><span class="nx">value</span><span class="p">);</span>
+  <span class="p">}</span>
+
+  <span class="kd">function</span> <span class="nx">getScrollTop</span><span class="p">()</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="nx">$win</span><span class="p">.</span><span class="nx">scrollTop</span><span class="p">()</span> <span class="o">||</span> <span class="p">(</span><span class="nb">document</span><span class="p">.</span><span class="nx">documentElement</span> <span class="o">&amp;&amp;</span> <span class="nb">document</span><span class="p">.</span><span class="nx">documentElement</span><span class="p">.</span><span class="nx">scrollTop</span><span class="p">);</span>
+  <span class="p">}</span>
+
+  <span class="kd">function</span> <span class="nx">animloop</span><span class="p">()</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nb">Math</span><span class="p">.</span><span class="nx">floor</span><span class="p">(</span><span class="nx">currentPosition</span> <span class="o">*</span> <span class="mi">5000</span><span class="p">)</span> <span class="o">!==</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">floor</span><span class="p">(</span><span class="nx">targetPosition</span> <span class="o">*</span> <span class="mi">5000</span><span class="p">))</span> <span class="p">{</span>
+      <span class="kd">var</span> <span class="nx">deaccelerate</span> <span class="o">=</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">max</span><span class="p">(</span><span class="nb">Math</span><span class="p">.</span><span class="nx">min</span><span class="p">(</span><span class="nb">Math</span><span class="p">.</span><span class="nx">abs</span><span class="p">(</span><span class="nx">targetPosition</span> <span class="o">-</span> <span class="nx">currentPosition</span><span class="p">)</span> <span class="o">*</span> <span class="mi">5000</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span> <span class="mi">2</span><span class="p">);</span>
+      <span class="nx">currentPosition</span> <span class="o">+=</span> <span class="p">(</span><span class="nx">targetPosition</span> <span class="o">-</span> <span class="nx">currentPosition</span><span class="p">)</span> <span class="o">/</span> <span class="nx">deaccelerate</span><span class="p">;</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Handle the scroll min &amp; max</p></div></div><div class="code"><div class="wrapper">      <span class="k">if</span> <span class="p">(</span><span class="nx">userScrollEnabled</span> <span class="o">||</span> <span class="nx">dragScroll</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">userScrollMinMaxHandler</span><span class="p">(</span><span class="nx">currentPosition</span><span class="p">,</span> <span class="nx">targetPosition</span><span class="p">);</span>
+      <span class="p">}</span>
+
+      <span class="nx">render</span><span class="p">(</span><span class="nx">currentPosition</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="nx">requestAnimFrame</span><span class="p">(</span><span class="nx">animloop</span><span class="p">);</span>
+  <span class="p">}</span>
+
+  <span class="k">this</span><span class="p">.</span><span class="nx">handleLoadProgress</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">progress</span> <span class="o">=</span> <span class="nx">imageSeqLoader</span><span class="p">.</span><span class="nx">getLoadProgress</span><span class="p">()</span> <span class="o">*</span> <span class="mi">100</span><span class="p">;</span>
+    <span class="nx">$</span><span class="p">(</span><span class="s1">&#39;#loading-bar&#39;</span><span class="p">).</span><span class="nx">css</span><span class="p">({</span>
+      <span class="nx">width</span><span class="o">:</span> <span class="nx">progress</span> <span class="o">+</span> <span class="s1">&#39;%&#39;</span><span class="p">,</span>
+      <span class="nx">opacity</span><span class="o">:</span> <span class="mi">1</span>
+    <span class="p">});</span>
+  <span class="p">};</span>
+
+  <span class="k">this</span><span class="p">.</span><span class="nx">handleLoadComplete</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+    <span class="nx">$</span><span class="p">(</span><span class="s1">&#39;#loading-bar&#39;</span><span class="p">).</span><span class="nx">css</span><span class="p">({</span>
+      <span class="nx">width</span><span class="o">:</span> <span class="s1">&#39;100%&#39;</span><span class="p">,</span>
+      <span class="nx">opacity</span><span class="o">:</span> <span class="mi">0</span>
+    <span class="p">});</span>
+  <span class="p">};</span>
+
+  <span class="kd">function</span> <span class="nx">render</span><span class="p">(</span><span class="nx">position</span><span class="p">)</span> <span class="p">{</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Get min height and max height</p></div></div><div class="code"><div class="wrapper">    <span class="kd">var</span> <span class="nx">minY</span> <span class="o">=</span> <span class="o">-</span><span class="nx">windowHeight</span><span class="p">,</span>
+      <span class="nx">maxY</span> <span class="o">=</span> <span class="nx">windowHeight</span><span class="p">;</span>
+
+    <span class="nx">$</span><span class="p">.</span><span class="nx">each</span><span class="p">(</span><span class="nx">$hotspotElements</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">index</span><span class="p">,</span> <span class="nx">element</span><span class="p">)</span> <span class="p">{</span>
+        <span class="kd">var</span> <span class="nx">$hotspot</span> <span class="o">=</span> <span class="nx">$</span><span class="p">(</span><span class="nx">element</span><span class="p">);</span>
+        <span class="kd">var</span> <span class="nx">elemPosition</span> <span class="o">=</span> <span class="nb">Number</span><span class="p">(</span><span class="nx">$hotspot</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;data-position&#39;</span><span class="p">));</span>
+        <span class="kd">var</span> <span class="nx">elemSpeed</span> <span class="o">=</span> <span class="nb">Number</span><span class="p">(</span><span class="nx">$hotspot</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;data-speed&#39;</span><span class="p">));</span>
+        <span class="kd">var</span> <span class="nx">elemTimer</span> <span class="o">=</span> <span class="nb">Number</span><span class="p">(</span><span class="nx">$hotspot</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;data-timer&#39;</span><span class="p">));</span>
+        <span class="kd">var</span> <span class="nx">elemEffect</span> <span class="o">=</span> <span class="nx">$hotspot</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;data-effect&#39;</span><span class="p">);</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>get the item height</p></div></div><div class="code"><div class="wrapper">        <span class="kd">var</span> <span class="nx">elemY</span> <span class="o">=</span> <span class="nx">windowHeight</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">+</span> <span class="nx">elemSpeed</span> <span class="o">*</span> <span class="p">(</span><span class="nx">elemPosition</span> <span class="o">-</span> <span class="nx">position</span><span class="p">)</span> <span class="o">*</span> <span class="nx">scrollHeight</span><span class="p">;</span>
+        <span class="kd">var</span> <span class="nx">elemYTimer</span> <span class="o">=</span> <span class="nx">windowHeight</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">+</span> <span class="nx">elemSpeed</span> <span class="o">*</span> <span class="p">(</span><span class="nx">elemPosition</span> <span class="o">+</span> <span class="nx">elemTimer</span> <span class="o">-</span> <span class="nx">position</span><span class="p">)</span> <span class="o">*</span> <span class="nx">scrollHeight</span><span class="p">;</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>If position isn't in the window</p></div></div><div class="code"><div class="wrapper">        <span class="k">if</span> <span class="p">(</span><span class="nx">elemYTimer</span> <span class="o">&lt;</span> <span class="nx">minY</span> <span class="o">||</span> <span class="nx">elemY</span> <span class="o">&gt;</span> <span class="nx">maxY</span><span class="p">)</span> <span class="p">{</span>
+          <span class="nx">$hotspot</span><span class="p">.</span><span class="nx">css</span><span class="p">({</span>
+            <span class="nx">visiblity</span><span class="o">:</span> <span class="s1">&#39;none&#39;</span><span class="p">,</span>
+            <span class="nx">top</span><span class="o">:</span> <span class="s1">&#39;-1000px&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;webkitTransform&#39;</span><span class="o">:</span> <span class="s1">&#39;none&#39;</span>
+          <span class="p">});</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>If elem must be in window</p></div></div><div class="code"><div class="wrapper">        <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+
+          <span class="kd">var</span> <span class="nx">baseY</span> <span class="o">=</span> <span class="nx">maxY</span> <span class="o">/</span> <span class="mi">2</span><span class="p">;</span>
+          <span class="k">if</span> <span class="p">(</span><span class="nx">elemYTimer</span> <span class="o">&lt;</span> <span class="nx">baseY</span> <span class="o">&amp;&amp;</span> <span class="nx">elemYTimer</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">launchMidEffect</span><span class="p">(</span><span class="nx">$hotspot</span><span class="p">);</span>
+          <span class="p">}</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Make the effect for the slide effect wanted</p></div></div><div class="code"><div class="wrapper">          <span class="k">switch</span> <span class="p">(</span><span class="nx">elemEffect</span><span class="p">)</span> <span class="p">{</span>
+
+          <span class="k">case</span> <span class="s1">&#39;slide-bottom&#39;</span><span class="o">:</span>
+            <span class="nx">effectSlideFromBottom</span><span class="p">(</span><span class="nx">$hotspot</span><span class="p">,</span> <span class="nx">elemYTimer</span><span class="p">,</span> <span class="nx">elemY</span><span class="p">,</span> <span class="nx">maxY</span><span class="p">);</span>
+            <span class="k">break</span><span class="p">;</span>
+
+          <span class="k">case</span> <span class="s1">&#39;slide-left&#39;</span><span class="o">:</span>
+            <span class="nx">effectSlideFromLeft</span><span class="p">(</span><span class="nx">$hotspot</span><span class="p">,</span> <span class="nx">elemYTimer</span><span class="p">,</span> <span class="nx">elemY</span><span class="p">,</span> <span class="nx">maxY</span><span class="p">);</span>
+            <span class="k">break</span><span class="p">;</span>
+
+          <span class="k">case</span> <span class="s1">&#39;slide-right&#39;</span><span class="o">:</span>
+            <span class="nx">effectSlideFromRight</span><span class="p">(</span><span class="nx">$hotspot</span><span class="p">,</span> <span class="nx">elemYTimer</span><span class="p">,</span> <span class="nx">elemY</span><span class="p">,</span> <span class="nx">maxY</span><span class="p">);</span>
+            <span class="k">break</span><span class="p">;</span>
+
+          <span class="k">case</span> <span class="s1">&#39;fade&#39;</span><span class="o">:</span>
+            <span class="nx">effectFadeIn</span><span class="p">(</span><span class="nx">$hotspot</span><span class="p">,</span> <span class="nx">elemYTimer</span><span class="p">,</span> <span class="nx">elemY</span><span class="p">,</span> <span class="nx">maxY</span><span class="p">);</span>
+            <span class="k">break</span><span class="p">;</span>
+
+          <span class="p">}</span>
+
+        <span class="p">}</span>
+      <span class="p">}</span>
+
+    <span class="p">);</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Then, render the position of the video</p></div></div><div class="code"><div class="wrapper">    <span class="nx">renderVideo</span><span class="p">(</span><span class="nx">position</span><span class="p">);</span>
+  <span class="p">}</span>
+
+  <span class="kd">function</span> <span class="nx">launchMidEffect</span><span class="p">(</span><span class="nx">$hotspot</span><span class="p">)</span> <span class="p">{</span>
+
+    <span class="kd">var</span> <span class="nx">eventLaunch</span> <span class="o">=</span> <span class="s1">&#39;start&#39;</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">$hotspot</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;data-event-launch&#39;</span><span class="p">))</span> <span class="p">{</span>
+      <span class="nx">eventLaunch</span> <span class="o">=</span> <span class="nx">$hotspot</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;data-event-launch&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="nx">eventLaunch</span> <span class="o">===</span> <span class="s1">&#39;start&#39;</span><span class="p">)</span> <span class="p">{</span>
+      <span class="nx">handleDataAttributes</span><span class="p">(</span><span class="nx">$hotspot</span><span class="p">);</span>
+    <span class="p">}</span>
+
+  <span class="p">}</span>
+
+  <span class="kd">function</span> <span class="nx">handleDataAttributes</span><span class="p">(</span><span class="nx">$elem</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">$elem</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;data-scroll&#39;</span><span class="p">))</span> <span class="p">{</span>
+      <span class="kd">var</span> <span class="nx">scrollVal</span> <span class="o">=</span> <span class="nb">parseInt</span><span class="p">(</span><span class="nx">$elem</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;data-scroll&#39;</span><span class="p">));</span>
+      <span class="k">if</span> <span class="p">(</span><span class="nx">scrollVal</span> <span class="o">===</span> <span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">userScrollEnabled</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+      <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+        <span class="nx">userScrollEnabled</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="nx">$elem</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;data-scroll-min&#39;</span><span class="p">))</span> <span class="p">{</span>
+      <span class="nx">scrollMin</span> <span class="o">=</span> <span class="nb">parseFloat</span><span class="p">(</span><span class="nx">$elem</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;data-scroll-min&#39;</span><span class="p">));</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="nx">$elem</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;data-scroll-max&#39;</span><span class="p">))</span> <span class="p">{</span>
+      <span class="nx">scrollMax</span> <span class="o">=</span> <span class="nb">parseFloat</span><span class="p">(</span><span class="nx">$elem</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;data-scroll-max&#39;</span><span class="p">));</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="nx">$elem</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;data-drag-min&#39;</span><span class="p">))</span> <span class="p">{</span>
+      <span class="nx">dragScrollMin</span> <span class="o">=</span> <span class="nb">parseFloat</span><span class="p">(</span><span class="nx">$elem</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;data-drag-min&#39;</span><span class="p">));</span>
+      <span class="k">if</span> <span class="p">(</span><span class="nx">isTouch</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">scrollMin</span> <span class="o">=</span> <span class="nb">parseFloat</span><span class="p">(</span><span class="nx">$elem</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;data-drag-min&#39;</span><span class="p">));</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="nx">$elem</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;data-drag-max&#39;</span><span class="p">))</span> <span class="p">{</span>
+      <span class="nx">dragScrollMax</span> <span class="o">=</span> <span class="nb">parseFloat</span><span class="p">(</span><span class="nx">$elem</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;data-drag-max&#39;</span><span class="p">));</span>
+      <span class="k">if</span> <span class="p">(</span><span class="nx">isTouch</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">scrollMax</span> <span class="o">=</span> <span class="nb">parseFloat</span><span class="p">(</span><span class="nx">$elem</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;data-drag-max&#39;</span><span class="p">));</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="nx">$elem</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;data-drag-scroll&#39;</span><span class="p">))</span> <span class="p">{</span>
+      <span class="kd">var</span> <span class="nx">dragScrollVal</span> <span class="o">=</span> <span class="nb">parseInt</span><span class="p">(</span><span class="nx">$elem</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;data-drag-scroll&#39;</span><span class="p">));</span>
+      <span class="k">if</span> <span class="p">(</span><span class="nx">dragScrollVal</span> <span class="o">===</span> <span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">setDragScroll</span><span class="p">(</span><span class="kc">true</span><span class="p">);</span>
+      <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">$elem</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;data-position&#39;</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="nx">dragScroll</span><span class="p">)</span> <span class="p">{</span>
+          <span class="nx">scrollToPos</span><span class="p">(</span><span class="nb">parseFloat</span><span class="p">(</span><span class="nx">$elem</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;data-position&#39;</span><span class="p">)),</span> <span class="kc">true</span><span class="p">,</span> <span class="kc">false</span><span class="p">);</span>
+        <span class="p">}</span>
+        <span class="nx">setDragScroll</span><span class="p">(</span><span class="kc">false</span><span class="p">);</span>
+
+      <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="nx">$elem</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;data-auto-scroll&#39;</span><span class="p">))</span> <span class="p">{</span>
+      <span class="kd">var</span> <span class="nx">autoScrollVal</span> <span class="o">=</span> <span class="nb">parseInt</span><span class="p">(</span><span class="nx">$elem</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;data-auto-scroll&#39;</span><span class="p">));</span>
+      <span class="k">if</span> <span class="p">(</span><span class="nx">autoScrollVal</span> <span class="o">===</span> <span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">autoScrollEnabled</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+        <span class="kd">var</span> <span class="nx">timer</span> <span class="o">=</span> <span class="mi">500</span><span class="p">;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">$elem</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;data-auto-scroll-timer&#39;</span><span class="p">))</span> <span class="p">{</span>
+          <span class="nx">timer</span> <span class="o">=</span> <span class="nb">parseFloat</span><span class="p">(</span><span class="nx">$elem</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;data-auto-scroll-timer&#39;</span><span class="p">));</span>
+        <span class="p">}</span>
+
+        <span class="nx">launchAutoScroll</span><span class="p">(</span><span class="nx">timer</span><span class="p">);</span>
+      <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+        <span class="nx">autoScrollEnabled</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+
+  <span class="p">}</span>
+
+  <span class="kd">function</span> <span class="nx">setDragScroll</span><span class="p">(</span><span class="nx">val</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">val</span><span class="p">)</span> <span class="p">{</span>
+      <span class="nx">dragScroll</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+      <span class="k">if</span> <span class="p">(</span><span class="nx">isTouch</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">userScrollEnabled</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+      <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+        <span class="nx">$</span><span class="p">(</span><span class="s1">&#39;#main&#39;</span><span class="p">).</span><span class="nx">dragScroll</span><span class="p">({</span>
+          <span class="nx">dragSelector</span><span class="o">:</span> <span class="s1">&#39;.street-view&#39;</span><span class="p">,</span>
+          <span class="nx">mainHandler</span><span class="o">:</span> <span class="s1">&#39;window&#39;</span><span class="p">,</span>
+          <span class="nx">maxHeight</span><span class="o">:</span> <span class="nx">scrollHeight</span><span class="p">,</span>
+          <span class="nx">dragMin</span><span class="o">:</span> <span class="nx">dragScrollMin</span><span class="p">,</span>
+          <span class="nx">dragMax</span><span class="o">:</span> <span class="nx">dragScrollMax</span><span class="p">,</span>
+          <span class="nx">enable</span><span class="o">:</span> <span class="kc">true</span>
+        <span class="p">});</span>
+      <span class="p">}</span>
+    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+      <span class="nx">dragScroll</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
+      <span class="k">if</span> <span class="p">(</span><span class="nx">isTouch</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">userScrollEnabled</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
+      <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+        <span class="nx">$</span><span class="p">(</span><span class="s1">&#39;#main&#39;</span><span class="p">).</span><span class="nx">dragScroll</span><span class="p">({</span>
+          <span class="nx">enable</span><span class="o">:</span> <span class="kc">false</span>
+        <span class="p">});</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+
+  <span class="kd">function</span> <span class="nx">getXPosition</span><span class="p">(</span><span class="nx">elemY</span><span class="p">,</span> <span class="nx">maxY</span><span class="p">)</span> <span class="p">{</span>
+
+    <span class="kd">var</span> <span class="nx">xValue</span> <span class="o">=</span> <span class="o">-</span><span class="p">((</span><span class="nx">elemY</span> <span class="o">/</span> <span class="nx">maxY</span><span class="p">)</span> <span class="o">*</span> <span class="nx">windowWidth</span><span class="p">);</span>
+
+    <span class="k">return</span> <span class="nx">xValue</span><span class="p">;</span>
+  <span class="p">}</span>
+
+  <span class="kd">function</span> <span class="nx">effectSlideFromRight</span><span class="p">(</span><span class="nx">$hotspot</span><span class="p">,</span> <span class="nx">elemYTimer</span><span class="p">,</span> <span class="nx">elemY</span><span class="p">,</span> <span class="nx">maxY</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">positionTop</span> <span class="o">=</span> <span class="nx">$hotspot</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;data-top-position&#39;</span><span class="p">);</span>
+    <span class="kd">var</span> <span class="nx">elemX</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="nx">elemY</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+      <span class="k">if</span> <span class="p">(</span><span class="nx">elemYTimer</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">elemX</span> <span class="o">=</span> <span class="nx">getXPosition</span><span class="p">(</span><span class="nx">elemYTimer</span><span class="p">,</span> <span class="nx">maxY</span><span class="p">);</span>
+
+        <span class="nx">$hotspot</span><span class="p">.</span><span class="nx">css</span><span class="p">({</span>
+          <span class="nx">visiblity</span><span class="o">:</span> <span class="s1">&#39;visible&#39;</span><span class="p">,</span>
+          <span class="nx">top</span><span class="o">:</span> <span class="nx">positionTop</span><span class="p">,</span>
+          <span class="nx">right</span><span class="o">:</span> <span class="nx">elemX</span><span class="p">,</span>
+          <span class="nx">position</span><span class="o">:</span> <span class="s1">&#39;fixed&#39;</span>
+        <span class="p">});</span>
+      <span class="p">}</span> <span class="k">else</span> <span class="p">{</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Fix a too fast scroll bug</p></div></div><div class="code"><div class="wrapper">        <span class="nx">elemX</span> <span class="o">=</span> <span class="nx">getXPosition</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nx">maxY</span><span class="p">);</span>
+
+        <span class="nx">$hotspot</span><span class="p">.</span><span class="nx">css</span><span class="p">({</span>
+          <span class="nx">visiblity</span><span class="o">:</span> <span class="s1">&#39;visible&#39;</span><span class="p">,</span>
+          <span class="nx">top</span><span class="o">:</span> <span class="nx">positionTop</span><span class="p">,</span>
+          <span class="nx">right</span><span class="o">:</span> <span class="nx">elemX</span><span class="p">,</span>
+          <span class="nx">position</span><span class="o">:</span> <span class="s1">&#39;fixed&#39;</span>
+        <span class="p">});</span>
+      <span class="p">}</span>
+    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+      <span class="nx">elemX</span> <span class="o">=</span> <span class="nx">getXPosition</span><span class="p">(</span><span class="nx">elemY</span><span class="p">,</span> <span class="nx">maxY</span><span class="p">);</span>
+
+      <span class="nx">$hotspot</span><span class="p">.</span><span class="nx">css</span><span class="p">({</span>
+        <span class="nx">visiblity</span><span class="o">:</span> <span class="s1">&#39;visible&#39;</span><span class="p">,</span>
+        <span class="nx">top</span><span class="o">:</span> <span class="nx">positionTop</span><span class="p">,</span>
+        <span class="nx">right</span><span class="o">:</span> <span class="nx">elemX</span><span class="p">,</span>
+        <span class="nx">position</span><span class="o">:</span> <span class="s1">&#39;fixed&#39;</span>
+      <span class="p">});</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+
+  <span class="kd">function</span> <span class="nx">effectSlideFromLeft</span><span class="p">(</span><span class="nx">$hotspot</span><span class="p">,</span> <span class="nx">elemYTimer</span><span class="p">,</span> <span class="nx">elemY</span><span class="p">,</span> <span class="nx">maxY</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">positionTop</span> <span class="o">=</span> <span class="nx">$hotspot</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;data-top-position&#39;</span><span class="p">);</span>
+    <span class="kd">var</span> <span class="nx">elemX</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="nx">elemY</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+      <span class="k">if</span> <span class="p">(</span><span class="nx">elemYTimer</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">elemX</span> <span class="o">=</span> <span class="nx">getXPosition</span><span class="p">(</span><span class="nx">elemYTimer</span><span class="p">,</span> <span class="nx">maxY</span><span class="p">);</span>
+
+        <span class="nx">$hotspot</span><span class="p">.</span><span class="nx">css</span><span class="p">({</span>
+          <span class="nx">visiblity</span><span class="o">:</span> <span class="s1">&#39;visible&#39;</span><span class="p">,</span>
+          <span class="nx">top</span><span class="o">:</span> <span class="nx">positionTop</span><span class="p">,</span>
+          <span class="nx">left</span><span class="o">:</span> <span class="nx">elemX</span><span class="p">,</span>
+          <span class="nx">position</span><span class="o">:</span> <span class="s1">&#39;fixed&#39;</span>
+        <span class="p">});</span>
+      <span class="p">}</span> <span class="k">else</span> <span class="p">{</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Fix a too fast scroll bug</p></div></div><div class="code"><div class="wrapper">        <span class="nx">elemX</span> <span class="o">=</span> <span class="nx">getXPosition</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nx">maxY</span><span class="p">);</span>
+
+        <span class="nx">$hotspot</span><span class="p">.</span><span class="nx">css</span><span class="p">({</span>
+          <span class="nx">visiblity</span><span class="o">:</span> <span class="s1">&#39;visible&#39;</span><span class="p">,</span>
+          <span class="nx">top</span><span class="o">:</span> <span class="nx">positionTop</span><span class="p">,</span>
+          <span class="nx">left</span><span class="o">:</span> <span class="nx">elemX</span><span class="p">,</span>
+          <span class="nx">position</span><span class="o">:</span> <span class="s1">&#39;fixed&#39;</span>
+        <span class="p">});</span>
+      <span class="p">}</span>
+    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+      <span class="nx">elemX</span> <span class="o">=</span> <span class="nx">getXPosition</span><span class="p">(</span><span class="nx">elemY</span><span class="p">,</span> <span class="nx">maxY</span><span class="p">);</span>
+
+      <span class="nx">$hotspot</span><span class="p">.</span><span class="nx">css</span><span class="p">({</span>
+        <span class="nx">visiblity</span><span class="o">:</span> <span class="s1">&#39;visible&#39;</span><span class="p">,</span>
+        <span class="nx">top</span><span class="o">:</span> <span class="nx">positionTop</span><span class="p">,</span>
+        <span class="nx">left</span><span class="o">:</span> <span class="nx">elemX</span><span class="p">,</span>
+        <span class="nx">position</span><span class="o">:</span> <span class="s1">&#39;fixed&#39;</span>
+      <span class="p">});</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+
+  <span class="kd">function</span> <span class="nx">effectSlideFromBottom</span><span class="p">(</span><span class="nx">$hotspot</span><span class="p">,</span> <span class="nx">elemYTimer</span><span class="p">,</span> <span class="nx">elemY</span><span class="p">,</span> <span class="nx">maxY</span><span class="p">)</span> <span class="p">{</span>
+
+    <span class="kd">var</span> <span class="nx">baseY</span> <span class="o">=</span> <span class="nx">maxY</span> <span class="o">/</span> <span class="mi">2</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">finalTranslate</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">transform</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">elemY</span> <span class="o">&lt;</span> <span class="nx">baseY</span><span class="p">)</span> <span class="p">{</span>
+      <span class="k">if</span> <span class="p">(</span><span class="nx">elemYTimer</span> <span class="o">&lt;</span> <span class="nx">baseY</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">$hotspot</span><span class="p">.</span><span class="nx">css</span><span class="p">({</span>
+          <span class="nx">visiblity</span><span class="o">:</span> <span class="s1">&#39;visible&#39;</span><span class="p">,</span>
+          <span class="nx">top</span><span class="o">:</span> <span class="nx">elemYTimer</span><span class="p">,</span>
+          <span class="nx">position</span><span class="o">:</span> <span class="s1">&#39;fixed&#39;</span>
+        <span class="p">});</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="nx">$hotspot</span><span class="p">.</span><span class="nx">hasClass</span><span class="p">(</span><span class="s1">&#39;right&#39;</span><span class="p">))</span> <span class="p">{</span>
+
+          <span class="nx">finalTranslate</span> <span class="o">=</span> <span class="nx">getTranslation</span><span class="p">(</span><span class="nx">elemYTimer</span><span class="p">,</span> <span class="nb">parseInt</span><span class="p">(</span><span class="nx">$hotspot</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="nx">style</span><span class="p">.</span><span class="nx">right</span><span class="p">),</span> <span class="nx">baseY</span><span class="p">);</span>
+          <span class="nx">transform</span> <span class="o">=</span> <span class="s1">&#39;translate3d(&#39;</span> <span class="o">+</span> <span class="p">(</span><span class="nx">finalTranslate</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;px, 0px, 0px)&#39;</span><span class="p">;</span>
+
+          <span class="nx">$hotspot</span><span class="p">.</span><span class="nx">css</span><span class="p">({</span>
+            <span class="s1">&#39;-webkit-transform&#39;</span><span class="o">:</span> <span class="nx">transform</span><span class="p">,</span>
+            <span class="s1">&#39;-moz-transform&#39;</span><span class="o">:</span> <span class="nx">transform</span><span class="p">,</span>
+            <span class="s1">&#39;-o-transform&#39;</span><span class="o">:</span> <span class="nx">transform</span><span class="p">,</span>
+            <span class="s1">&#39;-ms-transform&#39;</span><span class="o">:</span> <span class="nx">transform</span>
+          <span class="p">});</span>
+        <span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nx">$hotspot</span><span class="p">.</span><span class="nx">hasClass</span><span class="p">(</span><span class="s1">&#39;left&#39;</span><span class="p">))</span> <span class="p">{</span>
+
+          <span class="nx">finalTranslate</span> <span class="o">=</span> <span class="nx">getTranslation</span><span class="p">(</span><span class="nx">elemYTimer</span><span class="p">,</span> <span class="nb">parseInt</span><span class="p">(</span><span class="nx">$hotspot</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="nx">style</span><span class="p">.</span><span class="nx">left</span><span class="p">),</span> <span class="nx">baseY</span><span class="p">);</span>
+          <span class="nx">transform</span> <span class="o">=</span> <span class="s1">&#39;translate3d(-&#39;</span> <span class="o">+</span> <span class="p">(</span><span class="nx">finalTranslate</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;px, 0px, 0px)&#39;</span><span class="p">;</span>
+
+          <span class="nx">$hotspot</span><span class="p">.</span><span class="nx">css</span><span class="p">({</span>
+            <span class="s1">&#39;-webkit-transform&#39;</span><span class="o">:</span> <span class="nx">transform</span><span class="p">,</span>
+            <span class="s1">&#39;-moz-transform&#39;</span><span class="o">:</span> <span class="nx">transform</span><span class="p">,</span>
+            <span class="s1">&#39;-o-transform&#39;</span><span class="o">:</span> <span class="nx">transform</span><span class="p">,</span>
+            <span class="s1">&#39;-ms-transform&#39;</span><span class="o">:</span> <span class="nx">transform</span>
+          <span class="p">});</span>
+        <span class="p">}</span>
+      <span class="p">}</span>
+    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+      <span class="nx">$hotspot</span><span class="p">.</span><span class="nx">css</span><span class="p">({</span>
+        <span class="nx">visiblity</span><span class="o">:</span> <span class="s1">&#39;visible&#39;</span><span class="p">,</span>
+        <span class="nx">top</span><span class="o">:</span> <span class="nx">elemY</span><span class="p">,</span>
+        <span class="nx">position</span><span class="o">:</span> <span class="s1">&#39;fixed&#39;</span>
+      <span class="p">});</span>
+    <span class="p">}</span>
+
+  <span class="p">}</span>
+
+  <span class="kd">function</span> <span class="nx">effectFadeIn</span><span class="p">(</span><span class="nx">$hotspot</span><span class="p">,</span> <span class="nx">elemYTimer</span><span class="p">,</span> <span class="nx">elemY</span><span class="p">,</span> <span class="nx">maxY</span><span class="p">)</span> <span class="p">{</span>
+
+    <span class="kd">var</span> <span class="nx">positionTop</span> <span class="o">=</span> <span class="nx">$hotspot</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;data-top-position&#39;</span><span class="p">);</span>
+    <span class="kd">var</span> <span class="nx">opacityEffect</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="p">(</span><span class="nb">Math</span><span class="p">.</span><span class="nx">abs</span><span class="p">(</span><span class="nx">elemY</span><span class="p">)</span> <span class="o">/</span> <span class="nx">maxY</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">$hotspot</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;data-left-position&#39;</span><span class="p">))</span> <span class="p">{</span>
+      <span class="nx">$hotspot</span><span class="p">.</span><span class="nx">css</span><span class="p">({</span>
+        <span class="nx">left</span><span class="o">:</span> <span class="nx">$hotspot</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;data-left-position&#39;</span><span class="p">)</span>
+      <span class="p">});</span>
+    <span class="p">}</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">$hotspot</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;data-right-position&#39;</span><span class="p">))</span> <span class="p">{</span>
+      <span class="nx">$hotspot</span><span class="p">.</span><span class="nx">css</span><span class="p">({</span>
+        <span class="nx">right</span><span class="o">:</span> <span class="nx">$hotspot</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;data-right-position&#39;</span><span class="p">)</span>
+      <span class="p">});</span>
+    <span class="p">}</span>
+    <span class="kd">var</span> <span class="nx">elemX</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="nx">elemY</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+      <span class="k">if</span> <span class="p">(</span><span class="nx">elemYTimer</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+
+        <span class="nx">opacityEffect</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="p">(</span><span class="nb">Math</span><span class="p">.</span><span class="nx">abs</span><span class="p">(</span><span class="nx">elemYTimer</span><span class="p">)</span> <span class="o">/</span> <span class="nx">maxY</span><span class="p">);</span>
+
+        <span class="nx">$hotspot</span><span class="p">.</span><span class="nx">css</span><span class="p">({</span>
+          <span class="nx">visiblity</span><span class="o">:</span> <span class="s1">&#39;visible&#39;</span><span class="p">,</span>
+          <span class="nx">top</span><span class="o">:</span> <span class="nx">positionTop</span><span class="p">,</span>
+          <span class="nx">position</span><span class="o">:</span> <span class="s1">&#39;fixed&#39;</span><span class="p">,</span>
+          <span class="nx">opacity</span><span class="o">:</span> <span class="nx">opacityEffect</span>
+        <span class="p">});</span>
+
+      <span class="p">}</span>
+    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+      <span class="nx">$hotspot</span><span class="p">.</span><span class="nx">css</span><span class="p">({</span>
+        <span class="nx">visiblity</span><span class="o">:</span> <span class="s1">&#39;visible&#39;</span><span class="p">,</span>
+        <span class="nx">top</span><span class="o">:</span> <span class="nx">positionTop</span><span class="p">,</span>
+        <span class="nx">position</span><span class="o">:</span> <span class="s1">&#39;fixed&#39;</span><span class="p">,</span>
+        <span class="nx">opacity</span><span class="o">:</span> <span class="nx">opacityEffect</span>
+      <span class="p">});</span>
+    <span class="p">}</span>
+
+  <span class="p">}</span>
+
+  <span class="kd">function</span> <span class="nx">getTranslation</span><span class="p">(</span><span class="nx">topCurrentPosition</span><span class="p">,</span> <span class="nx">baseXPosition</span><span class="p">,</span> <span class="nx">baseYPosition</span><span class="p">)</span> <span class="p">{</span>
+
+    <span class="nx">baseXPosition</span> <span class="o">=</span> <span class="nx">windowWidth</span> <span class="o">*</span> <span class="p">(</span><span class="nx">baseXPosition</span> <span class="o">/</span> <span class="mi">100</span><span class="p">);</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Get the percentage of completion</p></div></div><div class="code"><div class="wrapper">    <span class="kd">var</span> <span class="nx">percentageCompleted</span> <span class="o">=</span> <span class="nx">topCurrentPosition</span> <span class="o">/</span> <span class="nx">baseYPosition</span><span class="p">;</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>get the final translation to put</p></div></div><div class="code"><div class="wrapper">    <span class="kd">var</span> <span class="nx">finalTranslate</span> <span class="o">=</span> <span class="nx">baseXPosition</span> <span class="o">-</span> <span class="p">((</span><span class="nx">percentageCompleted</span><span class="p">)</span> <span class="o">*</span> <span class="nx">baseXPosition</span><span class="p">);</span>
+
+    <span class="k">return</span> <span class="nx">finalTranslate</span><span class="p">;</span>
+  <span class="p">}</span>
+
+  <span class="kd">function</span> <span class="nx">renderVideo</span><span class="p">(</span><span class="nx">position</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">index</span> <span class="o">=</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">round</span><span class="p">(</span><span class="nx">currentPosition</span> <span class="o">*</span> <span class="p">(</span><span class="nx">imageSeqLoader</span><span class="p">.</span><span class="nx">length</span> <span class="o">-</span> <span class="mi">1</span><span class="p">));</span>
+    <span class="kd">var</span> <span class="nx">img</span> <span class="o">=</span> <span class="nx">imageSeqLoader</span><span class="p">.</span><span class="nx">getNearest</span><span class="p">(</span><span class="nx">index</span><span class="p">);</span>
+    <span class="kd">var</span> <span class="nx">nearestIndex</span> <span class="o">=</span> <span class="nx">imageSeqLoader</span><span class="p">.</span><span class="nx">nearestIndex</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">nearestIndex</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+      <span class="nx">nearestIndex</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="kd">var</span> <span class="nx">$img</span> <span class="o">=</span> <span class="nx">$</span><span class="p">(</span><span class="nx">img</span><span class="p">);</span>
+    <span class="kd">var</span> <span class="nx">src</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span> <span class="o">!!</span> <span class="nx">img</span><span class="p">)</span> <span class="p">{</span>
+      <span class="nx">src</span> <span class="o">=</span> <span class="nx">img</span><span class="p">.</span><span class="nx">src</span><span class="p">;</span>
+      <span class="k">if</span> <span class="p">(</span><span class="nx">src</span> <span class="o">!==</span> <span class="nx">currentSrc</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">$imgElement</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="nx">src</span> <span class="o">=</span> <span class="nx">src</span><span class="p">;</span>
+        <span class="nx">currentSrc</span> <span class="o">=</span> <span class="nx">src</span><span class="p">;</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="nx">clearTimeout</span><span class="p">(</span><span class="nx">highresTimeout</span><span class="p">);</span>
+    <span class="nx">highresTimeout</span> <span class="o">=</span> <span class="nx">setTimeout</span><span class="p">(</span><span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+      <span class="k">if</span> <span class="p">(</span> <span class="o">!!</span> <span class="nx">src</span><span class="p">)</span> <span class="p">{</span>
+        <span class="kd">var</span> <span class="nx">highSrc</span> <span class="o">=</span> <span class="nx">src</span><span class="p">.</span><span class="nx">split</span><span class="p">(</span><span class="s1">&#39;/min/&#39;</span><span class="p">).</span><span class="nx">join</span><span class="p">(</span><span class="s1">&#39;/large/&#39;</span><span class="p">);</span>
+        <span class="nx">loadHighres</span><span class="p">(</span><span class="nx">highSrc</span><span class="p">);</span>
+      <span class="p">}</span>
+    <span class="p">},</span> <span class="nx">isSlowBrowser</span><span class="p">()</span> <span class="o">?</span> <span class="mi">500</span> <span class="o">:</span> <span class="mi">150</span><span class="p">);</span>
+
+  <span class="p">}</span>
+
+  <span class="kd">function</span> <span class="nx">loadHighres</span><span class="p">(</span><span class="nx">src</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">videoImage</span> <span class="o">=</span> <span class="nx">$imgElement</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
+    <span class="nx">videoImage</span><span class="p">.</span><span class="nx">src</span> <span class="o">=</span> <span class="nx">src</span><span class="p">;</span>
+  <span class="p">}</span>
+
+  <span class="kd">function</span> <span class="nx">isSlowBrowser</span><span class="p">()</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="nx">isTouch</span> <span class="o">||</span> <span class="p">(</span><span class="nx">$</span><span class="p">.</span><span class="nx">browser</span><span class="p">.</span><span class="nx">msie</span> <span class="o">&amp;&amp;</span> <span class="nb">Number</span><span class="p">(</span><span class="nx">$</span><span class="p">.</span><span class="nx">browser</span><span class="p">.</span><span class="nx">version</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">8</span><span class="p">)</span> <span class="o">?</span> <span class="kc">true</span> <span class="o">:</span> <span class="kc">false</span><span class="p">;</span>
+  <span class="p">}</span>
+
+  <span class="nb">window</span><span class="p">.</span><span class="nx">requestAnimFrame</span> <span class="o">=</span> <span class="p">(</span><span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="nb">window</span><span class="p">.</span><span class="nx">requestAnimationFrame</span> <span class="o">||</span>
+      <span class="nb">window</span><span class="p">.</span><span class="nx">webkitRequestAnimationFrame</span> <span class="o">||</span>
+      <span class="nb">window</span><span class="p">.</span><span class="nx">mozRequestAnimationFrame</span> <span class="o">||</span>
+      <span class="nb">window</span><span class="p">.</span><span class="nx">oRequestAnimationFrame</span> <span class="o">||</span>
+      <span class="nb">window</span><span class="p">.</span><span class="nx">msRequestAnimationFrame</span> <span class="o">||</span>
+      <span class="kd">function</span> <span class="p">(</span> <span class="cm">/* function */</span> <span class="nx">callback</span><span class="p">,</span> <span class="cm">/* DOMElement */</span> <span class="nx">element</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nb">window</span><span class="p">.</span><span class="nx">setTimeout</span><span class="p">(</span><span class="nx">callback</span><span class="p">,</span> <span class="mi">1000</span> <span class="o">/</span> <span class="mi">60</span><span class="p">);</span>
+    <span class="p">};</span>
+  <span class="p">})();</span>
+
+  <span class="kd">function</span> <span class="nx">getSeqHotspots</span><span class="p">()</span> <span class="p">{</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>get the hotspots for the sequence by ajax request</p></div></div><div class="code"><div class="wrapper">    <span class="k">return</span> <span class="s1">&#39;&#39;</span><span class="p">;</span>
+  <span class="p">}</span>
+
+  <span class="kd">function</span> <span class="nx">putHotspots</span><span class="p">(</span><span class="nx">htmlHotspots</span><span class="p">)</span> <span class="p">{</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Put the hotspots</p></div></div><div class="code"><div class="wrapper">    <span class="nx">$hotspotsList</span><span class="p">.</span><span class="nx">html</span><span class="p">(</span><span class="nx">htmlHotspots</span><span class="p">);</span>
+  <span class="p">}</span>
+
+  <span class="k">this</span><span class="p">.</span><span class="nx">launchSequence</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">seqOptions</span><span class="p">)</span> <span class="p">{</span>
+
+    <span class="kd">var</span> <span class="nx">self</span> <span class="o">=</span> <span class="k">this</span><span class="p">;</span>
+    <span class="nx">sequencePos</span><span class="o">++</span><span class="p">;</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Set the stopAt if slow browser</p></div></div><div class="code"><div class="wrapper">    <span class="nx">seqOptions</span><span class="p">.</span><span class="nx">classOptions</span><span class="p">.</span><span class="nx">stopAt</span> <span class="o">=</span> <span class="nx">isSlowBrowser</span><span class="p">()</span> <span class="o">?</span> <span class="mi">4</span> <span class="o">:</span> <span class="mi">1</span><span class="p">;</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Stop animations</p></div></div><div class="code"><div class="wrapper">    <span class="nx">$</span><span class="p">(</span><span class="s2">&quot;html, body&quot;</span><span class="p">).</span><span class="nx">stop</span><span class="p">();</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="nx">sequencePos</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
+      <span class="nx">$imgContainer</span><span class="p">.</span><span class="nx">fadeOut</span><span class="p">();</span>
+      <span class="nx">$</span><span class="p">(</span><span class="s1">&#39;.hotspot&#39;</span><span class="p">).</span><span class="nx">each</span><span class="p">(</span><span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+        <span class="nx">$</span><span class="p">(</span><span class="k">this</span><span class="p">).</span><span class="nx">fadeOut</span><span class="p">();</span>
+      <span class="p">});</span>
+
+      <span class="nx">setTimeout</span><span class="p">(</span><span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+        <span class="nx">$</span><span class="p">(</span><span class="s1">&#39;html, body&#39;</span><span class="p">).</span><span class="nx">animate</span><span class="p">({</span>
+          <span class="nx">scrollTop</span><span class="o">:</span> <span class="mi">0</span>
+        <span class="p">},</span> <span class="mi">250</span><span class="p">);</span>
+        <span class="nx">$</span><span class="p">(</span><span class="s1">&#39;#main&#39;</span><span class="p">).</span><span class="nx">css</span><span class="p">({</span>
+          <span class="nx">height</span><span class="o">:</span> <span class="nx">seqOptions</span><span class="p">.</span><span class="nx">wrapperHeight</span> <span class="o">+</span> <span class="s1">&#39;px&#39;</span>
+        <span class="p">});</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="nx">seqOptions</span><span class="p">.</span><span class="nx">ajaxCall</span><span class="p">)</span> <span class="p">{</span>
+          <span class="kd">var</span> <span class="nx">htmlHotspots</span> <span class="o">=</span> <span class="nx">getSeqHotspots</span><span class="p">();</span>
+          <span class="nx">putHotspots</span><span class="p">(</span><span class="nx">htmlHotspots</span><span class="p">);</span>
+        <span class="p">}</span>
+
+        <span class="nx">self</span><span class="p">.</span><span class="nx">sequenceInit</span><span class="p">(</span><span class="nx">seqOptions</span><span class="p">);</span>
+
+        <span class="nx">setTimeout</span><span class="p">(</span><span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+          <span class="nx">$imgContainer</span><span class="p">.</span><span class="nx">fadeIn</span><span class="p">();</span>
+          <span class="nx">$</span><span class="p">(</span><span class="s1">&#39;.hotspot&#39;</span><span class="p">).</span><span class="nx">each</span><span class="p">(</span><span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+            <span class="nx">$</span><span class="p">(</span><span class="k">this</span><span class="p">).</span><span class="nx">fadeIn</span><span class="p">();</span>
+          <span class="p">});</span>
+        <span class="p">},</span> <span class="mi">500</span><span class="p">);</span>
+      <span class="p">},</span> <span class="mi">500</span><span class="p">);</span>
+    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+      <span class="nx">$</span><span class="p">(</span><span class="s1">&#39;#main&#39;</span><span class="p">).</span><span class="nx">css</span><span class="p">({</span>
+        <span class="nx">height</span><span class="o">:</span> <span class="nx">seqOptions</span><span class="p">.</span><span class="nx">wrapperHeight</span> <span class="o">+</span> <span class="s1">&#39;px&#39;</span>
+      <span class="p">});</span>
+      <span class="nx">self</span><span class="p">.</span><span class="nx">sequenceInit</span><span class="p">(</span><span class="nx">seqOptions</span><span class="p">);</span>
+    <span class="p">}</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Log the sequence</p></div></div><div class="code"><div class="wrapper">    <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Sequence &#39;</span> <span class="o">+</span> <span class="nx">sequencePos</span> <span class="o">+</span> <span class="s1">&#39; loaded.&#39;</span><span class="p">);</span>
+
+  <span class="p">};</span>
+
+  <span class="k">this</span><span class="p">.</span><span class="nx">sequenceInit</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">seqOptions</span><span class="p">)</span> <span class="p">{</span>
+
+    <span class="kd">var</span> <span class="nx">self</span> <span class="o">=</span> <span class="k">this</span><span class="p">;</span>
+
+    <span class="nx">$imgElement</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;src&#39;</span><span class="p">,</span> <span class="nx">seqOptions</span><span class="p">.</span><span class="nx">firstFrame</span><span class="p">);</span>
+
+    <span class="nx">autoScrollLength</span> <span class="o">=</span> <span class="nx">seqOptions</span><span class="p">.</span><span class="nx">autoScrollLength</span><span class="p">;</span>
+    <span class="nx">autoScrollEnabled</span> <span class="o">=</span> <span class="nx">seqOptions</span><span class="p">.</span><span class="nx">autoScrollEnabled</span><span class="p">;</span>
+    <span class="nx">autoScrollWaitingTime</span> <span class="o">=</span> <span class="nx">seqOptions</span><span class="p">.</span><span class="nx">autoScrollWaitingTime</span><span class="p">;</span>
+    <span class="nx">userScrollEnabled</span> <span class="o">=</span> <span class="nx">seqOptions</span><span class="p">.</span><span class="nx">userScrollEnabled</span><span class="p">;</span>
+    <span class="nx">wrapperHeight</span> <span class="o">=</span> <span class="nx">seqOptions</span><span class="p">.</span><span class="nx">wrapperHeight</span><span class="p">;</span>
+    <span class="nx">setDragScroll</span><span class="p">(</span><span class="nx">seqOptions</span><span class="p">.</span><span class="nx">dragDropScrollEnabled</span><span class="p">);</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>video handling</p></div></div><div class="code"><div class="wrapper">    <span class="nx">imageSeqLoader</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">ProgressiveImageSequence</span><span class="p">(</span><span class="nx">seqOptions</span><span class="p">.</span><span class="nx">indexFrames</span><span class="p">,</span> <span class="nx">seqOptions</span><span class="p">.</span><span class="nx">maxFrames</span><span class="p">,</span> <span class="nx">seqOptions</span><span class="p">.</span><span class="nx">classOptions</span><span class="p">);</span>
+
+    <span class="nx">self</span><span class="p">.</span><span class="nx">init</span><span class="p">(</span><span class="mi">640</span><span class="p">,</span> <span class="mi">1024</span><span class="p">);</span>
+
+    <span class="nx">imageSeqLoader</span><span class="p">.</span><span class="nx">loadPosition</span><span class="p">(</span><span class="nx">currentPosition</span><span class="p">,</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+      <span class="nx">loadCounterForIE</span><span class="o">++</span><span class="p">;</span>
+      <span class="k">if</span> <span class="p">(</span><span class="nx">loadCounterForIE</span> <span class="o">===</span> <span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">renderVideo</span><span class="p">(</span><span class="nx">currentPosition</span><span class="p">);</span>
+        <span class="nx">imageSeqLoader</span><span class="p">.</span><span class="nx">load</span><span class="p">();</span>
+        <span class="nx">imageSeqLoader</span><span class="p">.</span><span class="nx">load</span><span class="p">();</span>
+        <span class="nx">imageSeqLoader</span><span class="p">.</span><span class="nx">load</span><span class="p">();</span>
+        <span class="nx">imageSeqLoader</span><span class="p">.</span><span class="nx">load</span><span class="p">();</span>
+      <span class="p">}</span>
+    <span class="p">});</span>
+  <span class="p">};</span>
+
+  <span class="k">this</span><span class="p">.</span><span class="nx">reset</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Clear the scrollTimer timeout</p></div></div><div class="code"><div class="wrapper">    <span class="nx">clearTimeout</span><span class="p">(</span><span class="nx">$</span><span class="p">.</span><span class="nx">data</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="s1">&#39;scrollTimer&#39;</span><span class="p">));</span>
+  <span class="p">};</span>
+
+  <span class="kd">function</span> <span class="nx">touchOverride</span><span class="p">()</span> <span class="p">{</span>
+
+    <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Mobile device settings enclenched.&#39;</span><span class="p">);</span>
+
+    <span class="nx">$</span><span class="p">(</span><span class="s1">&#39;#main&#39;</span><span class="p">).</span><span class="nx">css</span><span class="p">(</span><span class="s1">&#39;height&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+
+    <span class="kd">var</span> <span class="nx">scrollPos</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">MAXSCROLL</span> <span class="o">=</span> <span class="nx">autoScrollLength</span><span class="p">;</span>
+
+    <span class="kd">var</span> <span class="nx">oldCalculateDimensions</span> <span class="o">=</span> <span class="nx">calculateDimensions</span><span class="p">;</span>
+    <span class="nx">calculateDimensions</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+      <span class="nx">oldCalculateDimensions</span><span class="p">();</span>
+      <span class="nx">scrollHeight</span> <span class="o">=</span> <span class="nx">MAXSCROLL</span> <span class="o">-</span> <span class="nx">windowHeight</span><span class="p">;</span>
+    <span class="p">};</span>
+
+    <span class="kd">var</span> <span class="nx">oldGetScrollTop</span> <span class="o">=</span> <span class="nx">getScrollTop</span><span class="p">;</span>
+    <span class="nx">getScrollTop</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+      <span class="k">return</span> <span class="nx">scrollPos</span><span class="p">;</span>
+    <span class="p">};</span>
+
+    <span class="kd">var</span> <span class="nx">oldSetScrollTop</span> <span class="o">=</span> <span class="nx">setScrollTop</span><span class="p">;</span>
+    <span class="nx">setScrollTop</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">value</span><span class="p">)</span> <span class="p">{</span>
+      <span class="nx">scrollPos</span> <span class="o">=</span> <span class="nx">value</span><span class="p">;</span>
+      <span class="nx">dispatchScroll</span><span class="p">();</span>
+    <span class="p">};</span>
+
+    <span class="kd">function</span> <span class="nx">dispatchScroll</span><span class="p">()</span> <span class="p">{</span>
+      <span class="nx">targetPosition</span> <span class="o">=</span> <span class="nx">scrollPos</span> <span class="o">/</span> <span class="nx">scrollHeight</span><span class="p">;</span>
+      <span class="k">if</span> <span class="p">(</span><span class="nx">targetPosition</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">targetPosition</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="kd">var</span> <span class="nx">d</span> <span class="o">=</span> <span class="nb">document</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">touchMoved</span><span class="p">,</span> <span class="nx">touchDown</span><span class="p">,</span> <span class="nx">touchBeginPosition</span><span class="p">,</span> <span class="nx">isLinkTouch</span><span class="p">;</span>
+
+    <span class="kd">function</span> <span class="nx">onTouchStart</span><span class="p">(</span><span class="nx">event</span><span class="p">)</span> <span class="p">{</span>
+      <span class="kd">var</span> <span class="nx">isNavigation</span> <span class="o">=</span> <span class="nx">$</span><span class="p">(</span><span class="nx">event</span><span class="p">.</span><span class="nx">target</span><span class="p">).</span><span class="nx">filter</span><span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">);</span>
+      <span class="k">if</span> <span class="p">(</span><span class="nx">isNavigation</span><span class="p">.</span><span class="nx">length</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">isNavigation</span> <span class="o">=</span> <span class="nx">isNavigation</span><span class="p">.</span><span class="nx">parents</span><span class="p">(</span><span class="s1">&#39;.navigation&#39;</span><span class="p">).</span><span class="nx">length</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">;</span>
+        <span class="k">return</span><span class="p">;</span>
+      <span class="p">}</span>
+      <span class="k">if</span> <span class="p">(</span><span class="nx">$</span><span class="p">(</span><span class="nx">event</span><span class="p">.</span><span class="nx">target</span><span class="p">).</span><span class="nx">parents</span><span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">).</span><span class="nx">length</span> <span class="o">===</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">event</span><span class="p">.</span><span class="nx">preventDefault</span><span class="p">();</span>
+      <span class="p">}</span>
+      <span class="nx">touchDown</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+      <span class="kd">var</span> <span class="nx">touch</span> <span class="o">=</span> <span class="nx">event</span><span class="p">.</span><span class="nx">touches</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
+      <span class="kd">var</span> <span class="nx">touchX</span> <span class="o">=</span> <span class="nx">touch</span><span class="p">.</span><span class="nx">clientX</span><span class="p">;</span>
+      <span class="kd">var</span> <span class="nx">touchY</span> <span class="o">=</span> <span class="nx">touch</span><span class="p">.</span><span class="nx">clientY</span><span class="p">;</span>
+      <span class="nx">touchBeginPosition</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="nx">x</span><span class="o">:</span> <span class="nx">touchX</span><span class="p">,</span>
+        <span class="nx">y</span><span class="o">:</span> <span class="nx">touchY</span><span class="p">,</span>
+        <span class="nx">scroll</span><span class="o">:</span> <span class="nx">scrollPos</span>
+      <span class="p">};</span>
+      <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">d</span><span class="p">.</span><span class="nx">addEventListener</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">d</span><span class="p">.</span><span class="nx">attachEvent</span><span class="p">(</span><span class="s2">&quot;touchmove&quot;</span><span class="p">,</span> <span class="nx">onTouchMove</span><span class="p">);</span>
+        <span class="nx">d</span><span class="p">.</span><span class="nx">attachEvent</span><span class="p">(</span><span class="s1">&#39;touchend&#39;</span><span class="p">,</span> <span class="nx">onTouchEnd</span><span class="p">);</span>
+      <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+        <span class="nx">d</span><span class="p">.</span><span class="nx">addEventListener</span><span class="p">(</span><span class="s1">&#39;touchmove&#39;</span><span class="p">,</span> <span class="nx">onTouchMove</span><span class="p">,</span> <span class="kc">false</span><span class="p">);</span>
+        <span class="nx">d</span><span class="p">.</span><span class="nx">addEventListener</span><span class="p">(</span><span class="s1">&#39;touchend&#39;</span><span class="p">,</span> <span class="nx">onTouchEnd</span><span class="p">,</span> <span class="kc">false</span><span class="p">);</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="kd">function</span> <span class="nx">onTouchMove</span><span class="p">(</span><span class="nx">event</span><span class="p">)</span> <span class="p">{</span>
+      <span class="nx">event</span><span class="p">.</span><span class="nx">preventDefault</span><span class="p">();</span>
+      <span class="kd">var</span> <span class="nx">touch</span> <span class="o">=</span> <span class="nx">event</span><span class="p">.</span><span class="nx">touches</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
+      <span class="kd">var</span> <span class="nx">touchX</span> <span class="o">=</span> <span class="nx">touch</span><span class="p">.</span><span class="nx">clientX</span><span class="p">;</span>
+      <span class="kd">var</span> <span class="nx">touchY</span> <span class="o">=</span> <span class="nx">touch</span><span class="p">.</span><span class="nx">clientY</span><span class="p">;</span>
+      <span class="kd">var</span> <span class="nx">dy</span> <span class="o">=</span> <span class="p">(</span><span class="nx">touchY</span> <span class="o">-</span> <span class="nx">touchBeginPosition</span><span class="p">.</span><span class="nx">y</span><span class="p">);</span>
+      <span class="k">if</span> <span class="p">(</span><span class="nb">Math</span><span class="p">.</span><span class="nx">abs</span><span class="p">(</span><span class="nx">dy</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">touchMoved</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+      <span class="p">}</span>
+      <span class="nx">scrollPos</span> <span class="o">=</span> <span class="nx">touchBeginPosition</span><span class="p">.</span><span class="nx">scroll</span> <span class="o">-</span> <span class="nx">dy</span> <span class="o">*</span> <span class="mi">2</span><span class="p">;</span>
+      <span class="nx">scrollPos</span> <span class="o">=</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">min</span><span class="p">(</span><span class="nx">MAXSCROLL</span><span class="p">,</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nx">scrollPos</span><span class="p">));</span>
+      <span class="nx">dispatchScroll</span><span class="p">();</span>
+    <span class="p">}</span>
+
+    <span class="kd">function</span> <span class="nx">onTouchEnd</span><span class="p">(</span><span class="nx">event</span><span class="p">)</span> <span class="p">{</span>
+      <span class="k">if</span> <span class="p">(</span><span class="nx">touchMoved</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">event</span><span class="p">.</span><span class="nx">preventDefault</span><span class="p">();</span>
+      <span class="p">}</span>
+
+      <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">d</span><span class="p">.</span><span class="nx">removeEventListener</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">d</span><span class="p">.</span><span class="nx">removeEvent</span><span class="p">(</span><span class="s1">&#39;touchmove&#39;</span><span class="p">,</span> <span class="nx">onTouchMove</span><span class="p">);</span>
+        <span class="nx">d</span><span class="p">.</span><span class="nx">removeEvent</span><span class="p">(</span><span class="s1">&#39;touchend&#39;</span><span class="p">,</span> <span class="nx">onTouchEnd</span><span class="p">);</span>
+      <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+        <span class="nx">d</span><span class="p">.</span><span class="nx">removeEventListener</span><span class="p">(</span><span class="s1">&#39;touchmove&#39;</span><span class="p">,</span> <span class="nx">onTouchMove</span><span class="p">,</span> <span class="kc">false</span><span class="p">);</span>
+        <span class="nx">d</span><span class="p">.</span><span class="nx">removeEventListener</span><span class="p">(</span><span class="s1">&#39;touchend&#39;</span><span class="p">,</span> <span class="nx">onTouchEnd</span><span class="p">,</span> <span class="kc">false</span><span class="p">);</span>
+      <span class="p">}</span>
+      <span class="nx">touchDown</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">d</span><span class="p">.</span><span class="nx">addEventListener</span><span class="p">)</span> <span class="p">{</span>
+      <span class="nx">d</span><span class="p">.</span><span class="nx">attachEvent</span><span class="p">(</span><span class="s1">&#39;touchstart&#39;</span><span class="p">,</span> <span class="nx">onTouchStart</span><span class="p">);</span>
+    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+      <span class="nx">d</span><span class="p">.</span><span class="nx">addEventListener</span><span class="p">(</span><span class="s1">&#39;touchstart&#39;</span><span class="p">,</span> <span class="nx">onTouchStart</span><span class="p">,</span> <span class="kc">false</span><span class="p">);</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+<span class="p">};</span></div></div></div></div></body></html>
