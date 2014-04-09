@@ -62,11 +62,11 @@ There is a lot of hotspots implementation. The classical one is :
 </div>
 ```
 
-The hotspot must have the `hotspot` classe.
-Then, to show the bubble, you need to set a `data-position`. For this exemple, `0.3` means 30%. The hotspot will show on 30% of the video.
-The `data-speed` attribute handle the speed to show the bubble.
-The `data-timer` will let the hotspot waiting in the middle of his animation during the time set. `20%` of the video for this example.
-The `data-effect` attribute will make the effect wanted to show the hotspot.
+* The hotspot must have the `hotspot` classe.
+* Then, to show the bubble, you need to set a `data-position`. For this exemple, `0.3` means 30%. The hotspot will show on 30% of the video.
+* The `data-speed` attribute handle the speed to show the bubble.
+* The `data-timer` will let the hotspot waiting in the middle of his animation during the time set. `20%` of the video for this example.
+* The `data-effect` attribute will make the effect wanted to show the hotspot.
 
 
 **/!\**
